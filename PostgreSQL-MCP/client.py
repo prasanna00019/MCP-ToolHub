@@ -14,8 +14,8 @@ from mcp.client.stdio import stdio_client
 load_dotenv()  # load environment variables from .env
 
 # Ollama model constant
-OLLAMA_MODEL = "qwen2.5-coder:7b"
-OLLAMA_BASE_URL = "http://192.168.1.143:11434"
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-v3.2:cloud")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # Logging setup
 LOG_FILE = "mcp_client_debug.log"
@@ -136,7 +136,7 @@ Always try to use the appropriate tools to answer user questions accurately."""
         ]
         
         final_text = []
-        max_iterations = 5  # Prevent infinite loops
+        max_iterations = 15  # Prevent infinite loops
         iteration = 0
         
         while iteration < max_iterations:

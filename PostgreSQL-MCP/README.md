@@ -4,13 +4,14 @@
 
 ##  Overview
 
-**SchemaIntelligence** is an MCP (Model Context Protocol) server that provides intelligent analysis and documentation of PostgreSQL databases. It combines deterministic schema extraction with AI-powered reasoning to help users and AI agents understand complex database structures.
+**SchemaIntelligence** is an MCP (Model Context Protocol) server that provides intelligent analysis, documentation, and complete CRUD operations for PostgreSQL databases. It combines deterministic schema extraction with AI-powered reasoning and 20 secure data manipulation operations to help users and AI agents understand and interact with complex database structures.
 
 ###  Key Features
 
 - **Schema Extraction**: Automatically extract tables, columns, relationships, and constraints
 - **Intelligent Analysis**: Detect junction tables, implicit relationships, and suggest optimal joins
 - **AI-Powered Insights**: Leverage Ollama/LLM to generate business explanations and recommendations
+- **Complete CRUD Operations**: 20 data manipulation operations with SQL injection prevention
 - **Multiple Output Formats**:
   - Mermaid ER diagrams (with SVG rendering)
   - Mermaid relationship flowcharts (with SVG rendering)
@@ -19,13 +20,14 @@
 - **Query Assistance**: Smart join type recommendations (INNER vs LEFT)
 - **Modular Architecture**: Clean, extensible design for easy feature additions
 - **Diagram Rendering**: Auto-generate visual database structure diagrams
+- **Security**: Parameterized queries, input validation, SQL injection prevention
 
 ---
 
 ##  Project Structure
 
 ```
-SchemaIntelligence/
+PostgreSQL-MCP/
 ├── src/
 │   ├── __init__.py               # Package initialization
 │   ├── config.py                 # Configuration management (DB, Ollama, App)
@@ -41,13 +43,20 @@ SchemaIntelligence/
 │   ├── generation/
 │   │   ├── __init__.py
 │   │   ├── mermaid_gen.py        # ER diagram generation
-│   │   └── markdown_gen.py       # Documentation generation
-│   └── llm/
-│       ├── __init__.py
-│       └── ollama_client.py      # Ollama/LLM integration
-├── postgresql_server.py          # MCP server with exposed tools
+│   │   ├── markdown_gen.py       # Documentation generation
+│   │   └── diagram_renderer.py   # SVG diagram rendering
+│   ├── llm/
+│   │   ├── __init__.py
+│   │   └── ollama_client.py      # Ollama/LLM integration
+│   └── crud/
+│       ├── __init__.py           # CRUD operations export
+│       ├── crud_manager.py       # Core CRUD operations (20 operations)
+│       └── crud_validator.py     # Input validation & security
+├── postgresql_server.py          # MCP server with all tools exposed
+├── client.py                     # MCP client for testing
 ├── main.py                       # Entry point placeholder
 ├── pyproject.toml               # Python project configuration
+├── .env                         # Environment variables (not in repo)
 └── README.md                    # This file
 ```
 
@@ -60,8 +69,8 @@ Centralized configuration for:
 - **AppConfig**: Application-level settings (logging, debug mode)
 
 #### `src/database/connection.py`
-- `get_connection()`: Create PostgreSQL connections
-- Handles connection pooling and error handling
+- `get_connection()`: Create PostgreSQL connections with pooling
+- Connection error handling and timeout management
 
 #### `src/schema/extractor.py`
 - `extract_schema()`: Full schema extraction
@@ -74,19 +83,44 @@ Centralized configuration for:
 - `suggest_joins()`: Recommend JOIN types based on nullability
 - `detect_implicit_relationships()`: Find potential undeclared FKs (*_id columns)
 
+#### `src/crud/crud_manager.py`
+Core CRUD operations (20 total):
+- **Create**: Insert records, batch operations, create tables/views/indexes
+- **Read**: Query data, get records with filters, count, distinct values, pagination
+- **Update**: Update records, batch updates, rename tables/columns
+- **Delete**: Delete records, truncate, drop tables
+- All operations use parameterized queries to prevent SQL injection
+
+#### `src/crud/crud_validator.py`
+Security and validation layer:
+- `validate_table_name()`: Identifier format and reserved keyword checking
+- `validate_column_name()`: Column name validation
+- `validate_column_type()`: PostgreSQL data type validation
+- `validate_where_clause()`: SQL injection pattern detection
+- `validate_values_dict()`: Data structure validation
+- `validate_primary_key()`: Primary key constraint validation
+- `validate_foreign_key()`: Foreign key relationship validation
+
 #### `src/generation/mermaid_gen.py`
-- `generate_mermaid_erd()`: Entity-Relationship Diagram in Mermaid
+- `generate_mermaid_erd()`: Entity-Relationship Diagram in Mermaid syntax
 - `generate_mermaid_flowchart()`: Relationship flowchart visualization
+- Supports table relationships, constraints, and cardinality
+
+#### `src/generation/diagram_renderer.py`
+- `render_database_diagrams()`: Convert Mermaid diagrams to visual formats
+- SVG rendering (recommended for API usage)
+- PNG/PDF support (requires mermaid-cli)
 
 #### `src/generation/markdown_gen.py`
-- `generate_markdown()`: Full database documentation
+- `generate_markdown()`: Full database documentation in Markdown
 - `generate_table_documentation()`: Single table documentation
+- Includes schema details, relationships, and constraints
 
 #### `src/llm/ollama_client.py`
-- `OllamaAnalyzer`: Interface to Ollama LLM
-- `explain_schema()`: Get AI analysis of database
-- `get_available_models()`: List available models
-- `is_available()`: Check model availability
+- `OllamaAnalyzer`: Interface to Ollama LLM for AI analysis
+- `explain_schema()`: Get business-level database analysis
+- `get_available_models()`: List deployed LLM models
+- `is_available()`: Check Ollama service status
 
 ---
 
@@ -137,10 +171,10 @@ uv run client.py postgresql_server.py
 
 ##  Available MCP Tools
 
-### 1. `analyze_database()`
-Comprehensive schema analysis without LLM.
+### Schema Analysis Tools
 
-**Returns:**
+#### 1. `analyze_database()`
+Comprehensive schema analysis without LLM.
 - Full schema structure
 - Junction tables detected
 - Implicit relationships
@@ -148,60 +182,70 @@ Comprehensive schema analysis without LLM.
 - Mermaid ER diagram
 - Markdown documentation
 
-### 2. `explain_database()`
-AI-powered analysis using Ollama.
-
-**Returns:**
+#### 2. `explain_database()`
+AI-powered database analysis using Ollama.
 - Business explanation of database purpose
-- Detected relationships
-- Join recommendations
-- Improved Mermaid ERD
-- Quality insights
+- Detected relationships and join recommendations
+- Improved Mermaid ERD with insights
+- Quality recommendations
 
-### 3. `get_table_details(table_name: str)`
+#### 3. `get_table_details(table_name: str)`
 Detailed analysis of a specific table.
-
-**Returns:**
-- Table structure
-- Relationships
+- Table structure and relationships
+- Column information
 - Table-specific documentation
 
-### 4. `list_tables()`
+#### 4. `list_tables()`
 Get all tables in database.
+- List of table names and total count
 
-**Returns:**
-- List of table names
-- Total count
-
-### 5. `check_ollama_status()`
+#### 5. `check_ollama_status()`
 Verify Ollama/LLM availability.
-
-**Returns:**
-- Service status
-- Available models
+- Service status and available models
 - Configured model status
 
-### 6. `render_database_diagrams(output_format: str = "svg")`
-Generate visual diagram files of database structure.
+#### 6. `render_database_diagrams(output_format: str = "svg")`
+Generate visual database structure diagrams.
+- ER Diagram (erd_svg.svg)
+- Flowchart (flowchart_svg.svg)
+- SVG files in `diagrams/` directory
 
-**Generates:**
-- **ER Diagram (erd_svg.svg)**: Complete entity-relationship diagram with all tables, columns, and relationships
-- **Flowchart (flowchart_svg.svg)**: Table relationship flowchart showing data flow
+---
 
-**Returns:**
-- Paths to generated SVG files in `diagrams/` directory
-- File sizes and status information
+### CRUD Operations (Phase 1)
 
-**Examples:**
-```
-# Generate default SVG diagrams
-render_database_diagrams()
+#### Create Operations
+- **`crud_create_record(table_name, values)`** - Insert single record with validation
+- **`crud_create_records_batch(table_name, records)`** - Batch insert multiple records
+- **`crud_create_table(table_name, columns, primary_key)`** - Create table with columns and constraints
+- **`crud_create_view(view_name, select_query, replace_if_exists)`** - Create database views
+- **`crud_create_index(index_name, table_name, columns, unique)`** - Create indexes (optional unique constraint)
 
-# Render as SVG (recommended for API, may fall back to mermaid-cli if available)
-render_database_diagrams(output_format="svg")
-```
+#### Read Operations
+- **`crud_query_data(query, params, limit, offset)`** - Execute SELECT with parameterization
+- **`crud_get_records(table_name, where_clause, order_by, limit, offset)`** - Filtered record retrieval
+- **`crud_get_record_count(table_name, where_clause)`** - Count records matching condition
+- **`crud_distinct_values(table_name, column_name, limit)`** - Get unique column values
+- **`crud_paginate_data(table_name, page, page_size, order_by, where_clause)`** - Paginated results with metadata
 
-**Note:** SVG format is recommended for optimal compatibility. PNG/PDF formats require mermaid-cli to be installed locally.
+#### Update Operations
+- **`crud_update_record(table_name, record_id, id_column, values)`** - Update single record by ID
+- **`crud_update_records_batch(table_name, where_clause, values)`** - Batch update matching records
+- **`crud_update_column(table_name, column_name, new_value, where_clause)`** - Bulk column value update
+- **`crud_rename_table(old_name, new_name)`** - Rename table safely
+- **`crud_rename_column(table_name, old_column, new_column)`** - Rename column with dependency checks
+
+#### Delete Operations
+- **`crud_delete_record(table_name, record_id, id_column)`** - Delete single record by ID
+- **`crud_delete_records(table_name, where_clause)`** - Delete multiple records matching condition
+- **`crud_truncate_table(table_name)`** - Clear all data from table (fast operation)
+- **`crud_drop_table(table_name, cascade)`** - Drop table with optional CASCADE
+
+**Security Features:**
+- ✅ Parameterized queries (prevents SQL injection)
+- ✅ Input validation (table/column name validation)
+- ✅ Constraint checking (validates data types and constraints)
+- ✅ Standardized response format with status and duration
 
 ---
 
@@ -243,7 +287,6 @@ erDiagram
 Query: "Analyze my database"
 → analyze_database() tool called
 → Returns: schema, junction tables, joins, ERD, docs
-→ User sees: complete database structure
 ```
 
 ### Example 2: Get AI Explanation
@@ -252,16 +295,76 @@ Query: "Analyze my database"
 Query: "Explain what this database does"
 → analyze_database() + explain_database() tools
 → Ollama LLM analyzes schema
-→ Returns: business purpose, relationships, insights
 ```
 
-### Example 3: Explore Specific Table
+### Example 3: Create a Table
 
 ```
-Query: "Tell me about the orders table"
-→ get_table_details("orders") tool called
-→ Returns: columns, relationships, documentation
+Query: "Create a table called 'products' with id (INTEGER primary key), name (VARCHAR 255), and price (DECIMAL 10,2)"
+→ crud_create_table() tool called
+→ Table created with specified columns and constraints
 ```
+
+### Example 4: Insert and Query Data
+
+```
+Query: "Insert a product record: name='Laptop', price=999.99 into products table"
+→ crud_create_record() tool called
+→ Record inserted with validation
+
+Query: "Get all products with price > 500 ordered by price descending, limit 10"
+→ crud_get_records() tool called
+→ Returns filtered, sorted records
+```
+
+### Example 5: Update Data
+
+```
+Query: "Update product id=1, set price to 899.99"
+→ crud_update_record() tool called
+→ Record updated safely with parameterized query
+```
+
+### Example 6: Data Analysis
+
+```
+Query: "Count how many products are in the database"
+→ crud_get_record_count() tool called
+→ Returns total count
+
+Query: "Get distinct product prices"
+→ crud_distinct_values() tool called
+→ Returns unique values
+```
+
+---
+
+##  Phase 2: Schema Modification (In Progress)
+
+Advanced schema operations for database evolution:
+
+### Column Management
+- Add/modify/drop columns with types and constraints
+- Set nullable/not-null constraints
+- Add default values
+- Column documentation and comments
+
+### Index Operations
+- List and analyze indexes
+- Create/drop indexes safely
+- Rebuild fragmented indexes
+- Check index usage
+
+### Constraint Operations
+- Add/drop primary keys, foreign keys, unique constraints
+- Add check constraints with validation
+- List all constraints by type
+- Manage cascade rules for dependencies
+
+### View Management
+- List and drop views
+- Get view definitions
+- Drop with cascade options
 
 ---
 

@@ -4,7 +4,7 @@ AI-powered PostgreSQL database analysis and documentation
 """
 
 from mcp.server.fastmcp import FastMCP
-from typing import Dict
+from typing import Any, Dict, List, Optional
 import json
 
 # Import modular components
@@ -17,6 +17,30 @@ from src.generation import DiagramRenderer
 from src.generation.diagram_renderer import render_database_diagrams as render_diagrams_impl
 from src.llm import OllamaAnalyzer
 
+# Import CRUD operations
+from src.crud import (
+    create_record,
+    create_records_batch,
+    create_table,
+    create_view,
+    create_index,
+    query_data,
+    # query_with_joins,
+    get_records,
+    get_record_count,
+    distinct_values,
+    paginate_data,
+    update_record,
+    update_records_batch,
+    update_column,
+    rename_table,
+    rename_column,
+    delete_record,
+    delete_records,
+    truncate_table,
+    drop_table,
+)
+
 # Initialize MCP Server
 mcp = FastMCP("SchemaIntelligence")
 
@@ -26,7 +50,7 @@ mcp = FastMCP("SchemaIntelligence")
 # ============================================
 
 @mcp.tool()
-def analyze_database() -> Dict:
+def analyze_database() -> Dict[str, Any]:
     """
     Analyze PostgreSQL database schema.
     
@@ -58,7 +82,7 @@ def analyze_database() -> Dict:
 
 
 @mcp.tool()
-def explain_database() -> Dict:
+def explain_database() -> Dict[str, Any]:
     """
     Use LLM (Ollama) to generate AI-powered database explanation.
     
@@ -132,7 +156,7 @@ def get_table_details(table_name: str) -> Dict:
 
 
 @mcp.tool()
-def list_tables() -> Dict:
+def list_tables() -> Dict[str, Any]:
     """
     List all tables in the database.
     
@@ -156,7 +180,7 @@ def list_tables() -> Dict:
 
 
 @mcp.tool()
-def check_ollama_status() -> Dict:
+def check_ollama_status() -> Dict[str, Any]:
     """
     Check if Ollama LLM service is available.
     
@@ -184,7 +208,7 @@ def check_ollama_status() -> Dict:
 
 
 @mcp.tool()
-def render_database_diagrams(output_format: str = "svg") -> Dict:
+def render_database_diagrams(output_format: str = "svg") -> Dict[str, Any]:
     """
     Render database diagrams as SVG images.
     
@@ -227,6 +251,186 @@ def render_database_diagrams(output_format: str = "svg") -> Dict:
             "status": "error",
             "error": str(e)
         }
+
+
+# ============================================
+# PHASE 1: CRUD OPERATIONS
+# ============================================
+
+# CREATE Operations
+
+@mcp.tool()
+def crud_create_record(table_name: str, values: Dict[str, Any]) -> Dict[str, Any]:
+    """Insert a single record into a table (parameterized for SQL injection safety)."""
+    return create_record(table_name, values)
+
+
+@mcp.tool()
+def crud_create_records_batch(table_name: str, records: List[Dict[str, Any]]) -> Dict:
+    """Insert multiple records in a batch (more efficient than single inserts)."""
+    return create_records_batch(table_name, records)
+
+
+@mcp.tool()
+def crud_create_table(table_name: str, columns: List[Dict[str, Any]], primary_key: Optional[List[str]] = None) -> Dict:
+    """
+    Create a new table with specified columns and constraints.
+    
+    Example columns:
+    [
+        {"name": "id", "type": "INTEGER", "nullable": False},
+        {"name": "name", "type": "VARCHAR(255)", "nullable": False},
+        {"name": "email", "type": "VARCHAR(255)", "nullable": True}
+    ]
+    """
+    return create_table(table_name, columns, primary_key)
+
+
+@mcp.tool()
+def crud_create_view(view_name: str, select_query: str, replace_if_exists: bool = False) -> Dict[str, Any]:
+    """Create a database view from a SELECT query."""
+    return create_view(view_name, select_query, replace_if_exists)
+
+
+@mcp.tool()
+def crud_create_index(index_name: str, table_name: str, columns: List[str], unique: bool = False) -> Dict[str, Any]:
+    """Create a single or composite index on table columns."""
+    return create_index(index_name, table_name, columns, unique)
+
+
+# READ Operations
+
+@mcp.tool()
+def crud_query_data(query: str, params: Optional[List[Any]] = None, limit: Optional[int] = None, offset: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Execute a SELECT query with optional pagination.
+    Use %s for parameterized values: "SELECT * FROM users WHERE age > %s AND city = %s"
+    """
+    return query_data(query, params, limit, offset)
+
+
+@mcp.tool()
+def crud_get_records(
+    table_name: str,
+    where_clause: Optional[str] = None,
+    where_params: Optional[List[Any]] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    order_by: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Get records from a table with filtering and sorting.
+    Example: where_clause="age > %s AND city = %s", where_params=[30, "NYC"], order_by="name ASC, age DESC"
+    """
+    return get_records(table_name, where_clause, where_params, limit, offset, order_by)
+
+
+@mcp.tool()
+def crud_get_record_count(
+    table_name: str,
+    where_clause: Optional[str] = None,
+    where_params: Optional[List[Any]] = None
+) -> Dict[str, Any]:
+    """Count records in a table with optional filtering."""
+    return get_record_count(table_name, where_clause, where_params)
+
+
+@mcp.tool()
+def crud_distinct_values(table_name: str, column_name: str, limit: Optional[int] = None) -> Dict[str, Any]:
+    """Get distinct values for a column."""
+    return distinct_values(table_name, column_name, limit)
+
+
+@mcp.tool()
+def crud_paginate_data(
+    table_name: str,
+    page: int = 1,
+    page_size: int = 10,
+    order_by: Optional[str] = None,
+    where_clause: Optional[str] = None,
+    where_params: Optional[List[Any]] = None
+) -> Dict[str, Any]:
+    """Get paginated records from a table with metadata about total pages."""
+    return paginate_data(table_name, page, page_size, order_by, where_clause, where_params)
+
+
+# UPDATE Operations
+
+@mcp.tool()
+def crud_update_record(table_name: str, record_id: Any, id_column: str, values: Dict[str, Any]) -> Dict[str, Any]:
+    """Update a single record by ID. Example: update_record("users", 123, "id", {"name": "John", "age": 30})"""
+    return update_record(table_name, record_id, id_column, values)
+
+
+@mcp.tool()
+def crud_update_records_batch(
+    table_name: str,
+    where_clause: str,
+    where_params: List[Any],
+    values: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Update multiple records matching a WHERE clause.
+    Example: where_clause="age > %s AND city = %s", where_params=[30, "NYC"], values={"status": "active"}
+    """
+    return update_records_batch(table_name, where_clause, where_params, values)
+
+
+@mcp.tool()
+def crud_update_column(
+    table_name: str,
+    column_name: str,
+    new_value: Any,
+    where_clause: Optional[str] = None,
+    where_params: Optional[List[Any]] = None
+) -> Dict[str, Any]:
+    """Bulk update a single column. WARNING: If no WHERE clause, updates ALL records!"""
+    return update_column(table_name, column_name, new_value, where_clause, where_params)
+
+
+@mcp.tool()
+def crud_rename_table(old_name: str, new_name: str) -> Dict[str, Any]:
+    """Rename a table safely."""
+    return rename_table(old_name, new_name)
+
+
+@mcp.tool()
+def crud_rename_column(table_name: str, old_column: str, new_column: str) -> Dict[str, Any]:
+    """Rename a column in a table."""
+    return rename_column(table_name, old_column, new_column)
+
+
+# DELETE Operations
+
+@mcp.tool()
+def crud_delete_record(table_name: str, record_id: Any, id_column: str) -> Dict[str, Any]:
+    """Delete a single record by ID."""
+    return delete_record(table_name, record_id, id_column)
+
+
+@mcp.tool()
+def crud_delete_records(table_name: str, where_clause: str, where_params: List[Any]) -> Dict[str, Any]:
+    """Delete multiple records matching a WHERE clause."""
+    return delete_records(table_name, where_clause, where_params)
+
+
+@mcp.tool()
+def crud_truncate_table(table_name: str) -> Dict[str, Any]:
+    """
+    Truncate (clear all data from) a table. Much faster than DELETE for large tables.
+    WARNING: This deletes all data! Cannot be rolled back in autocommit mode.
+    """
+    return truncate_table(table_name)
+
+
+@mcp.tool()
+def crud_drop_table(table_name: str, cascade: bool = False) -> Dict[str, Any]:
+    """
+    Drop (delete) a table from the database.
+    WARNING: This is permanent and deletes the entire table structure and data!
+    cascade: If True, also drop dependent objects (views, indexes, etc.)
+    """
+    return drop_table(table_name, cascade)
 
 
 if __name__ == "__main__":
