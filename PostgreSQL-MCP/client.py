@@ -160,13 +160,60 @@ Always try to use the appropriate tools to answer user questions accurately."""
             log_message(f"Model response: {response_text[:200]}...", "MODEL_RESPONSE")
             
             # Look for tool calls in format [TOOL: name with args: {...}]
-            tool_pattern = r'\[TOOL:\s*([\w_]+)\s+with\s+args:\s*({.*?})\]'
-            matches = re.findall(tool_pattern, response_text, re.DOTALL)
+            tool_start_pattern = r'\[TOOL:\s*([\w_]+)\s+with\s+args:\s*\{'
+            matches = []
+            
+            # Find all tool invocations and properly extract nested JSON
+            start_pos = 0
+            while True:
+                # Find the next tool call
+                match = re.search(tool_start_pattern, response_text[start_pos:])
+                if not match:
+                    break
+                    
+                tool_name = match.group(1)
+                
+                # We know the JSON starts at this brace
+                brace_start_idx = start_pos + match.end() - 1
+                
+                # Manually track nested braces to find the end of the JSON
+                brace_count = 0
+                json_end_idx = -1
+                
+                for i in range(brace_start_idx, len(response_text)):
+                    if response_text[i] == '{':
+                        brace_count += 1
+                    elif response_text[i] == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            json_end_idx = i
+                            break
+                            
+                if json_end_idx != -1:
+                    # Look for the closing bracket after the JSON
+                    end_bracket_idx = response_text.find(']', json_end_idx)
+                    
+                    if end_bracket_idx != -1:
+                        # Extract the full JSON string
+                        args_json = response_text[brace_start_idx:json_end_idx+1]
+                        matches.append((tool_name, args_json))
+                        
+                        # Replace the entire tool call block in display text later
+                        start_pos = end_bracket_idx + 1
+                    else:
+                        start_pos += match.end()
+                else:
+                    start_pos += match.end()
+                    
             log_message(f"Found {len(matches)} tool calls", "TOOL_DETECT")
             
             if matches:
                 # Remove tool call patterns from display text
-                display_text = re.sub(tool_pattern, '', response_text).strip()
+                display_text = response_text
+                # Removing the matches dynamically from response to show clean text
+                for tool_name, json_str in matches:
+                    pattern_to_remove = f"[TOOL: {tool_name} with args: {json_str}]"
+                    display_text = display_text.replace(pattern_to_remove, "").strip()
                 if display_text:
                     final_text.append(display_text)
                 

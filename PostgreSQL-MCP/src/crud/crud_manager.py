@@ -231,11 +231,27 @@ def create_table(
         )
     
     except Exception as e:
+        error_msg = str(e)
+        if "already exists" in error_msg:
+            return _format_result(
+                status="error",
+                operation="create_table",
+                duration_ms=(time.time() - start) * 1000,
+                message=f"Table '{table_name}' already exists in the database."
+            )
+        elif "syntax error" in error_msg:
+            return _format_result(
+                status="error",
+                operation="create_table",
+                duration_ms=(time.time() - start) * 1000,
+                message=f"Syntax error generating the table '{table_name}'. Try again with standard SQL parameters. Detail: {error_msg}"
+            )
+            
         return _format_result(
             status="error",
             operation="create_table",
             duration_ms=(time.time() - start) * 1000,
-            message=str(e)
+            message=error_msg
         )
 
 
