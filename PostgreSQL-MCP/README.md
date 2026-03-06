@@ -339,32 +339,30 @@ Query: "Get distinct product prices"
 
 ---
 
-##  Phase 2: Schema Modification (In Progress)
+##  Phase 2: Schema Modification
 
 Advanced schema operations for database evolution:
 
 ### Column Management
-- Add/modify/drop columns with types and constraints
-- Set nullable/not-null constraints
-- Add default values
-- Column documentation and comments
+- **`mod_add_column(table_name, column)`**: Add columns with custom types and constraints
+- **`mod_modify_column_type(table_name, column_name, new_type, using_expression)`**: Change data types securely
+- **`mod_drop_column(table_name, column_name, cascade)`**: Safely remove columns
+- **`mod_set_column_nullable(table_name, column_name, is_nullable)`**: Constraint toggling
 
 ### Index Operations
-- List and analyze indexes
-- Create/drop indexes safely
-- Rebuild fragmented indexes
-- Check index usage
+- **`mod_list_indexes(table_name)`**: Enumerate all indexes in the DB
+- **`mod_drop_index(index_name, cascade)`**: Safe index removal
 
 ### Constraint Operations
-- Add/drop primary keys, foreign keys, unique constraints
-- Add check constraints with validation
-- List all constraints by type
-- Manage cascade rules for dependencies
+- **`mod_list_constraints(table_name)`**: Enumerate table constraints (Primary Keys, Foreign Keys, etc.)
+- **`mod_add_primary_key(table_name, columns, constraint_name)`**: Add PK constraint
+- **`mod_add_foreign_key(table_name, columns, ref_table, ref_columns, constraint_name, on_delete)`**: Define explicit structural constraints
+- **`mod_drop_constraint(table_name, constraint_name, cascade)`**: Removing PK/FK logically
 
 ### View Management
-- List and drop views
-- Get view definitions
-- Drop with cascade options
+- **`mod_list_views()`**: List all user-defined virtual tables
+- **`mod_get_view_definition(view_name)`**: Retrieve backend SQL
+- **`mod_drop_view(view_name, cascade)`**: Purge views using cascading logic
 
 ---
 

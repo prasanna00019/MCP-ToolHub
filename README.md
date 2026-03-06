@@ -3,4 +3,5 @@ A collection of MCP tools for database intelligence, AI integration, automation,
 
 ## Table of Contents
 
-- [PostgreSQL-MCP (SchemaIntelligence)](./PostgreSQL-MCP/README.md) - AI-powered PostgreSQL MCP server for schema analysis and documentation.
+- [PostgreSQL-MCP](./PostgreSQL-MCP/README.md) - AI-powered PostgreSQL MCP server for schema analysis, CRUD and many other operations.
+- [IDE-Memory-MCP](./IDE-Memory-MCP/README.md) - A MCP Server for cross-IDE persistent memory layer for AI coding agents

@@ -15,3 +15,5 @@ __pycache__
 *.pyc
 diagrams/
 READMES/
+EXTENSION_PLAN.md
+phase2_testing_prompts.md.resolved
