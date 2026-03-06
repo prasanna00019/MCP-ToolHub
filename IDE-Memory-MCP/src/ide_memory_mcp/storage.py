@@ -14,9 +14,7 @@ from typing import Optional
 
 from ide_memory_mcp.models import MEMORY_SECTIONS, ProjectMeta
 
-# ---------------------------------------------------------------------------
-# Default root directory for all project memories
-# ---------------------------------------------------------------------------
+
 DEFAULT_MEMORY_ROOT = Path.home() / ".ide-memory" / "projects"
 
 

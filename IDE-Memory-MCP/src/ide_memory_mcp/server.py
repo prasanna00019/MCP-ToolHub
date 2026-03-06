@@ -24,16 +24,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ide-memory-mcp")
 
-# ---------------------------------------------------------------------------
-# Module-level FastMCP server & storage
-# ---------------------------------------------------------------------------
+
 mcp = FastMCP("ide-memory-mcp")
 storage = MemoryStorage()
 
 
-# ===========================================================================
-# TOOLS
-# ===========================================================================
+
 
 @mcp.tool()
 async def init_project(

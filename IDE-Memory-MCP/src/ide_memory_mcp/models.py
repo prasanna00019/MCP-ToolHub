@@ -10,9 +10,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
-# Memory section names (constants)
-# ---------------------------------------------------------------------------
 MEMORY_SECTIONS = [
     "overview",
     "structure",
@@ -39,7 +36,6 @@ class ProjectMeta(BaseModel):
         """Update the `updated_at` timestamp."""
         self.updated_at = datetime.now(timezone.utc).isoformat()
 
-    # -- persistence helpers --------------------------------------------------
 
     def save(self, path: Path) -> None:
         path.write_text(self.model_dump_json(indent=2), encoding="utf-8")
