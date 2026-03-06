@@ -5,6 +5,7 @@ A cross-IDE **persistent memory layer** for AI coding agents, built on the [Mode
 Switch IDEs (Cursor → VS Code → Windsurf → Claude Desktop → Antigravity) and your AI coding agent **instantly remembers** your project — architecture, decisions, file layout, gotchas — instead of starting from scratch every session.
 
 ---
+![IDE Memory MCP](logo.png)
 
 ##  What It Does
 
