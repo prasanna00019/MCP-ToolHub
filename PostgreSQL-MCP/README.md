@@ -1,16 +1,16 @@
-#  SchemaIntelligence: AI-Powered PostgreSQL MCP Server (Optimized Edition)
+#   PostgreSQL MCP Server 
 
 > Transforms PostgreSQL databases from "I have tables and I don't know what they do" into "I understand the entire database structure, relationships, and best practices"
 
 ##  Overview
 
-**SchemaIntelligence** is an MCP (Model Context Protocol) server that provides intelligent analysis, documentation, and complete CRUD operations for PostgreSQL databases. It combines deterministic schema extraction with AI-powered reasoning and secure data manipulation operations to help users and AI agents understand and interact with complex database structures.
+This is an MCP (Model Context Protocol) server that provides intelligent analysis, documentation, and complete CRUD operations for PostgreSQL databases. It combines deterministic schema extraction with AI-powered reasoning and secure data manipulation operations to help users and AI agents understand and interact with complex database structures.
 
-**⚡ Performance Optimized:** Reduced from 38 tools to 19 consolidated tools (~50% reduction) for significant token savings and faster agent decision-making while maintaining full functionality.
+**Performance Optimized:** Reduced from 38 tools to 19 consolidated tools (~50% reduction) for significant token savings and faster agent decision-making while maintaining full functionality.
 
 ###  Key Features
 
-- **🎯 Token-Optimized**: 19 consolidated tools (down from 38) = ~50% lower context overhead
+- **Token-Optimized**: 19 consolidated tools (down from 38) = ~50% lower context overhead
 - **Schema Extraction**: Automatically extract tables, columns, relationships, and constraints
 - **Intelligent Analysis**: Detect junction tables, implicit relationships, and suggest optimal joins
 - **AI-Powered Insights**: Leverage Ollama/LLM to generate business explanations and recommendations
@@ -25,7 +25,7 @@
 - **Diagram Rendering**: Auto-generate visual database structure diagrams
 - **Security**: Parameterized queries, input validation, SQL injection prevention
 
-### 💡 Optimization Benefits
+### Optimization Benefits
 
 **Why Consolidation Matters:**
 - **Lower Token Usage**: Fewer tool descriptions in agent context = reduced costs per request
@@ -148,8 +148,8 @@ Security and validation layer:
 
 1. **Clone repository and install dependencies:**
    ```bash
-   cd SchemaIntelligence
-   uv pip install -e .
+   cd PostgreSQL-MCP
+   uv sync
    ```
 
 2. **Set environment variables** (create `.env`):
@@ -175,15 +175,13 @@ Security and validation layer:
 # Start MCP server
 uv run postgresql_server.py
 
-# In another terminal, run client
-uv run client.py postgresql_server.py
 ```
 
 ---
 
 ##  Available MCP Tools (19 Total - Optimized)
 
-### 📊 Category 1: Analysis & Schema Tools (5 tools)
+###  Category 1: Analysis & Schema Tools (5 tools)
 
 #### 1. `analyze_database()`
 Comprehensive schema analysis without LLM.
@@ -222,7 +220,7 @@ Generate visual database structure diagrams.
 
 ---
 
-### ✨ Category 2: CRUD Create Operations (4 tools)
+###  Category 2: CRUD Create Operations (4 tools)
 
 #### 6. `crud_insert(table_name: str, data: Dict | List[Dict])`
 **NEW: Smart insert** - Consolidates single and batch inserts
@@ -250,7 +248,7 @@ Create single or composite indexes.
 
 ---
 
-### 🔍 Category 3: CRUD Read Operations (2 tools)
+###  Category 3: CRUD Read Operations (2 tools)
 
 #### 10. `crud_query(query, params, limit, offset)`
 **NEW: Raw SQL query execution** - For complex queries with JOINs and aggregations
@@ -269,7 +267,7 @@ Create single or composite indexes.
 
 ---
 
-### ✏️ Category 4: CRUD Update Operations (2 tools)
+### Category 4: CRUD Update Operations (2 tools)
 
 #### 12. `crud_update(table_name, values, where_clause, where_params, id_column, record_id)`
 **NEW: Unified update** - Consolidates single, batch, and column updates
@@ -286,7 +284,7 @@ Create single or composite indexes.
 
 ---
 
-### 🗑️ Category 5: CRUD Delete Operations (1 tool)
+###  Category 5: CRUD Delete Operations (1 tool)
 
 #### 14. `crud_delete(table_name, mode, where_clause, where_params, id_column, record_id, cascade)`
 **NEW: Unified deletion** - Consolidates 4 delete operations
@@ -299,7 +297,7 @@ Create single or composite indexes.
 
 ---
 
-### 🔧 Category 6: Schema Modification (5 tools)
+###  Category 6: Schema Modification (5 tools)
 
 #### 15. `mod_column(table_name, action, column_name, column_spec, cascade)`
 **NEW: Unified column management** - Consolidates 4 column operations
@@ -331,7 +329,7 @@ Create single or composite indexes.
 
 ---
 
-## 📊 Tool Consolidation Summary
+##  Tool Consolidation Summary
 
 | Category | Before | After | Reduction |
 |----------|--------|-------|-----------|
@@ -352,186 +350,13 @@ Create single or composite indexes.
 - ✅ Input validation (table/column name validation)
 - ✅ Constraint checking (validates data types and constraints)
 - ✅ Standardized response format with status and duration
+---
+**CRUD & SCHEMA ANALYSIS VIDEO**
+[![Demo Video](https://img.shields.io/badge/WATCH-DEMO-red?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1neyl0bAqyX_0_sCIPTnmZFYL33Ykisva/view)
 
 ---
 
-##  Output Examples
 
-### Mermaid ER Diagram
-```mermaid
-erDiagram
-  users {
-    int id
-    string email
-    string name
-  }
-  orders {
-    int id
-    int user_id
-    decimal amount
-  }
-  users ||--o{ orders : places
-```
-
-### Join Recommendations
-```json
-{
-  "left_table": "orders",
-  "right_table": "users",
-  "join_condition": "orders.user_id = users.id",
-  "join_type": "INNER JOIN"
-}
-```
-
----
-
-##  Usage Examples with New Consolidated Tools
-
-### Example 1: Analyze a Database
-
-```
-Query: "Analyze my database"
-→ analyze_database() tool called
-→ Returns: schema, junction tables, joins, ERD, flowchart, docs
-```
-
-### Example 2: Get AI Explanation
-
-```
-Query: "Explain what this database does"
-→ analyze_database() + explain_database() tools
-→ Ollama LLM analyzes schema
-```
-
-### Example 3: List All Tables
-
-```
-Query: "Show me all tables in the database"
-→ get_database_info(info_type="tables") tool called
-→ Returns list of tables with count
-```
-
-### Example 4: Create and Populate a Table
-
-```
-Query: "Create a table called 'products' with id (INTEGER primary key), name (VARCHAR 255), and price (DECIMAL 10,2)"
-→ crud_create_table() tool called
-→ Table created with specified columns and constraints
-
-Query: "Insert product records: name='Laptop', price=999.99 and name='Mouse', price=29.99"
-→ crud_insert(data=[{"name": "Laptop", "price": 999.99}, {"name": "Mouse", "price": 29.99}])
-→ Batch insert executed
-```
-
-### Example 5: Query Data (Multiple Modes)
-
-```
-Query: "Get all products with price > 500 ordered by price descending, limit 10"
-→ crud_get(table_name="products", mode="records", where_clause="price > %s", 
-           where_params=[500], options={"limit": 10, "order_by": "price DESC"})
-→ Returns filtered, sorted records
-
-Query: "Count how many products cost more than 100"
-→ crud_get(table_name="products", mode="count", where_clause="price > %s", where_params=[100])
-→ Returns count
-
-Query: "Show me all distinct product prices"
-→ crud_get(table_name="products", mode="distinct", options={"column_name": "price"})
-→ Returns unique values
-```
-
-### Example 6: Update Records
-
-```
-Query: "Update product id=1, set price to 899.99"
-→ crud_update(table_name="products", values={"price": 899.99}, record_id=1, id_column="id")
-→ Single record updated
-
-Query: "Set all products with price < 50 to status 'cheap'"
-→ crud_update(table_name="products", values={"status": "cheap"}, 
-              where_clause="price < %s", where_params=[50])
-→ Batch update executed
-```
-
-### Example 7: Schema Modifications
-
-```
-Query: "Add a 'discount' column to products table (DECIMAL 5,2)"
-→ mod_column(table_name="products", action="add", 
-             column_spec={"name": "discount", "type": "DECIMAL(5,2)", "nullable": True})
-→ Column added
-
-Query: "Show me all indexes on the products table"
-→ mod_index(action="list", table_name="products")
-→ Returns list of indexes
-
-Query: "Add a foreign key: orders.product_id references products.id"
-→ mod_add_constraint(constraint_type="foreign_key", table_name="orders",
-                     spec={"columns": ["product_id"], "ref_table": "products", 
-                           "ref_columns": ["id"], "on_delete": "CASCADE"})
-→ Foreign key constraint added
-```
-
-### Example 8: Delete Operations
-
-```
-Query: "Delete product with id=5"
-→ crud_delete(table_name="products", mode="records", record_id=5, id_column="id")
-→ Single record deleted
-
-Query: "Delete all products where price is null"
-→ crud_delete(table_name="products", mode="records", 
-              where_clause="price IS NULL", where_params=[])
-→ Batch deletion executed
-
-Query: "Clear all data from the products table"
-→ crud_delete(table_name="products", mode="truncate")
-→ Table truncated (fast operation)
-```
-
----
-
-## 🔌 Extensibility
-
-### Adding a New Analysis Tool
-
-1. Create function in appropriate `src/` module
-2. Import in `postgresql_server.py`
-3. Wrap with `@mcp.tool()` decorator
-
-```python
-# Example: src/analysis/new_analyzer.py
-def analyze_query_patterns(schema: Dict) -> Dict:
-    """Analyze schema for query optimization opportunities"""
-    return {"patterns": [...]}
-
-# In postgresql_server.py
-from src.analysis.new_analyzer import analyze_query_patterns
-
-@mcp.tool()
-def get_query_optimization_tips() -> Dict:
-    schema = extract_schema()
-    return analyze_query_patterns(schema)
-```
-
-### Using Different LLM Providers
-
-1. Extend `src/llm/ollama_client.py` or create `src/llm/openai_client.py`
-2. Implement same interface as `OllamaAnalyzer`
-3. Update imports in `postgresql_server.py`
-
-
-
----
-
-##  Resources
-
-- [PostgreSQL Information Schema](https://www.postgresql.org/docs/current/information-schema.html)
-- [Mermaid ER Diagrams](https://mermaid.js.org/syntax/entityRelationshipDiagram.html)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Ollama Documentation](https://ollama.com/docs)
-
----
 
 ## 🤝 Contributing
 
