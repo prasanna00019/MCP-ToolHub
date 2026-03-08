@@ -305,7 +305,7 @@ def backup_table(
                 FROM pg_indexes
                 WHERE tablename = %s
                     AND schemaname = 'public'
-                    AND indexname NOT LIKE '%_pkey'
+                    AND indexname NOT LIKE '%%_pkey'
             """, (table_name,))
             
             indexes = cursor.fetchall()
@@ -313,14 +313,18 @@ def backup_table(
             
             for idx_name, idx_def in indexes:
                 try:
+                    cursor.execute("SAVEPOINT backup_idx")
                     # Modify index definition to use backup table
+                    # pg_indexes.indexdef uses schema-qualified names: ON public.tablename
                     new_idx_name = idx_name.replace(table_name, backup_name)
-                    new_idx_def = idx_def.replace(f" ON {table_name} ", f" ON {backup_name} ")
-                    new_idx_def = new_idx_def.replace(f"{idx_name}", f"{new_idx_name}")
-                    
+                    new_idx_def = idx_def.replace(f" ON public.{table_name} ", f" ON public.{backup_name} ")
+                    new_idx_def = new_idx_def.replace(f" ON {table_name} ", f" ON {backup_name} ")
+                    new_idx_def = new_idx_def.replace(idx_name, new_idx_name)
                     cursor.execute(new_idx_def)
+                    cursor.execute("RELEASE SAVEPOINT backup_idx")
                     indexes_copied.append(new_idx_name)
                 except Exception as e:
+                    cursor.execute("ROLLBACK TO SAVEPOINT backup_idx")
                     warnings.append(f"Failed to copy index {idx_name}: {str(e)}")
             
             if indexes_copied:

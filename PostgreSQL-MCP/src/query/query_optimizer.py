@@ -334,8 +334,8 @@ def find_unused_indexes(min_size_mb: float = 1.0) -> Dict:
         cursor.execute("""
             SELECT
                 schemaname,
-                tablename,
-                indexname,
+                relname AS tablename,
+                indexrelname AS indexname,
                 idx_scan AS index_scans,
                 pg_size_pretty(pg_relation_size(indexrelid)) AS index_size,
                 pg_relation_size(indexrelid)::float / (1024*1024) AS size_mb,
