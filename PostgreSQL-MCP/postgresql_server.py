@@ -1,7 +1,7 @@
 """
 SchemaIntelligence MCP Server (Extended Edition)
 AI-powered PostgreSQL database analysis and management
-Extended from 19 tools to 30 tools with comprehensive query optimization,
+Extended from 19 tools to 27 tools with query optimization,
 data management, transactions, and monitoring capabilities.
 """
 
@@ -62,8 +62,7 @@ from src.schema_mod import (
 # Import Query Optimization operations (Phase 3A)
 from src.query import (
     explain_query,
-    suggest_indexes,
-    find_unused_indexes,
+    analyze_indexes,
 )
 
 # Import Data Management operations (Phase 4A & 4B)
@@ -71,8 +70,6 @@ from src.data import (
     export_data,
     import_data,
     search_data,
-    find_duplicates,
-    validate_foreign_keys,
 )
 
 # Import Transaction operations (Phase 5A)
@@ -1080,57 +1077,38 @@ def query_explain(
 
 
 @mcp.tool()
-def query_suggest_indexes(
+def query_analyze_indexes(
+    mode: str = "suggest",
     table_name: Optional[str] = None,
-    analyze_queries: bool = False
+    min_size_mb: float = 1.0
 ) -> Dict[str, Any]:
     """
-    Suggest potential indexes based on table structure and foreign keys.
-    
-    Analyzes:
-    - Foreign key columns without indexes
-    - Large tables without primary keys
-    - Commonly filtered columns (timestamps, status fields)
-    
-    Args:
-        table_name: Specific table to analyze (analyzes all tables if None)
-        analyze_queries: If True, also analyze query patterns (requires pg_stat_statements)
-        
-    Examples:
-        - Analyze all tables: (no arguments)
-        - Specific table: table_name="orders"
-        
-    Returns:
-        List of recommended indexes with SQL to create them
-    """
-    return suggest_indexes(table_name, analyze_queries)
+    Analyze database indexes.
 
+    Mode controls the type of analysis:
+    - 'suggest': Recommend missing indexes (FK columns, large tables, filter columns)
+    - 'unused':  Find indexes with zero/low usage that waste space
+    - 'all':     Run both analyses together
 
-@mcp.tool()
-def query_find_unused_indexes(min_size_mb: float = 1.0) -> Dict[str, Any]:
-    """
-    Find indexes with zero or low usage that might be candidates for removal.
-    
-    Analyzes pg_stat_user_indexes to find:
-    - Indexes that have never been scanned
-    - Indexes with very low usage
-    - Potential space savings from removing unused indexes
-    
     Args:
-        min_size_mb: Minimum index size in MB to report (default: 1.0)
-        
+        mode: 'suggest', 'unused', or 'all' (default: 'suggest')
+        table_name: For 'suggest'/'all' - specific table, or all tables if omitted
+        min_size_mb: For 'unused'/'all' - minimum index size in MB to report (default: 1.0)
+
     Examples:
-        - Find all unused: (no arguments)
-        - Only large unused: min_size_mb=5.0
-        
+        - Suggest for all tables: mode="suggest"
+        - Suggest for one table:  mode="suggest", table_name="orders"
+        - Find all unused:        mode="unused", min_size_mb=0
+        - Full analysis:          mode="all"
+
     Returns:
-        List of unused/low-usage indexes with removal SQL and space savings
+        Index analysis with recommendations or usage stats and SQL to act on them
     """
-    return find_unused_indexes(min_size_mb)
+    return analyze_indexes(mode, table_name, min_size_mb)
 
 
 # ============================================
-# CATEGORY 6: DATA MANAGEMENT TOOLS (Phase 4A & 4B - 5 tools)
+# CATEGORY 6: DATA MANAGEMENT TOOLS (Phase 4A & 4B - 3 tools)
 # ============================================
 
 @mcp.tool()
@@ -1235,59 +1213,6 @@ def data_search(
         Matching records with relevance scores (for similarity search)
     """
     return search_data(table_name, search_columns, search_term, search_type, limit)
-
-
-@mcp.tool()
-def data_find_duplicates(
-    table_name: str,
-    columns: List[str],
-    return_mode: str = "summary"
-) -> Dict[str, Any]:
-    """
-    Find duplicate records based on specified columns.
-    
-    Essential for:
-    - Data quality checks
-    - Pre-migration validation
-    - Preparing to add unique constraints
-    
-    Args:
-        table_name: Table to check for duplicates
-        columns: List of columns to check for duplicates
-        return_mode: 'summary' (counts only) or 'all_duplicates' (all duplicate rows)
-        
-    Examples:
-        - Check email duplicates: table_name="users", columns=["email"]
-        - Composite duplicates: table_name="products", columns=["sku", "vendor_id"]
-        - Get all rows: return_mode="all_duplicates"
-        
-    Returns:
-        Duplicate groups with counts and optionally all duplicate records
-    """
-    return find_duplicates(table_name, columns, return_mode)
-
-
-@mcp.tool()
-def data_validate_foreign_keys(table_name: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Validate foreign key integrity and find orphaned records.
-    
-    Critical for:
-    - Pre-migration data validation
-    - Finding data inconsistencies
-    - Preparing to add FK constraints
-    
-    Args:
-        table_name: Specific table to validate (validates all tables if None)
-        
-    Examples:
-        - Validate all: (no arguments)
-        - Specific table: table_name="orders"
-        
-    Returns:
-        List of foreign key violations with orphaned record counts and cleanup SQL
-    """
-    return validate_foreign_keys(table_name)
 
 
 # ============================================

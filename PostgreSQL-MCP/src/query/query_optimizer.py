@@ -1,6 +1,6 @@
 """
 Query Optimizer: Query analysis, execution plans, and index recommendations.
-Phase 3A: explain_query, suggest_indexes, find_unused_indexes
+Phase 3A: explain_query, analyze_indexes (merged from suggest_indexes + find_unused_indexes)
 """
 
 import time
@@ -113,7 +113,7 @@ def explain_query(
         )
 
 
-def suggest_indexes(
+def _suggest_indexes(
     table_name: Optional[str] = None,
     analyze_queries: bool = False
 ) -> Dict:
@@ -310,7 +310,7 @@ def suggest_indexes(
         )
 
 
-def find_unused_indexes(min_size_mb: float = 1.0) -> Dict:
+def _find_unused_indexes(min_size_mb: float = 1.0) -> Dict:
     """
     Find indexes with zero or low usage that might be candidates for removal.
     
@@ -356,10 +356,11 @@ def find_unused_indexes(min_size_mb: float = 1.0) -> Dict:
             
             # Check if it's a primary key or unique constraint (don't recommend removing these)
             cursor.execute("""
-                SELECT constraint_name
+                SELECT tc.constraint_name
                 FROM information_schema.table_constraints tc
                 JOIN information_schema.constraint_column_usage ccu
                     ON tc.constraint_name = ccu.constraint_name
+                    AND tc.table_schema = ccu.table_schema
                 WHERE tc.table_name = %s
                     AND tc.constraint_type IN ('PRIMARY KEY', 'UNIQUE')
                     AND EXISTS (
@@ -424,4 +425,67 @@ def find_unused_indexes(min_size_mb: float = 1.0) -> Dict:
             operation="find_unused_indexes",
             duration_ms=duration_ms,
             message=f"Failed to find unused indexes: {str(e)}"
+        )
+
+
+def analyze_indexes(
+    mode: str = "suggest",
+    table_name: Optional[str] = None,
+    min_size_mb: float = 1.0
+) -> Dict:
+    """
+    Analyze database indexes.
+
+    Args:
+        mode: Analysis type:
+              'suggest' - recommend missing indexes (FK columns, large tables, filter columns)
+              'unused'  - find indexes with zero/low usage that waste space
+              'all'     - run both analyses together
+        table_name: For 'suggest'/'all' - specific table to analyze (all tables if None)
+        min_size_mb: For 'unused'/'all' - minimum index size in MB to report (default: 1.0)
+
+    Returns:
+        Dictionary with index analysis results
+
+    Examples:
+        analyze_indexes(mode="suggest")
+        analyze_indexes(mode="suggest", table_name="orders")
+        analyze_indexes(mode="unused", min_size_mb=0)
+        analyze_indexes(mode="all")
+    """
+    valid_modes = ["suggest", "unused", "all"]
+    if mode not in valid_modes:
+        return _format_result(
+            status="error",
+            operation="analyze_indexes",
+            message=f"Invalid mode '{mode}'. Must be one of: {', '.join(valid_modes)}"
+        )
+
+    start_time = time.time()
+
+    if mode == "suggest":
+        r = _suggest_indexes(table_name)
+        r["operation"] = "analyze_indexes"
+        return r
+    elif mode == "unused":
+        r = _find_unused_indexes(min_size_mb)
+        r["operation"] = "analyze_indexes"
+        return r
+    else:  # "all"
+        suggest_r = _suggest_indexes(table_name)
+        unused_r = _find_unused_indexes(min_size_mb)
+        duration_ms = (time.time() - start_time) * 1000
+        combined_warnings = suggest_r.get("warnings", []) + unused_r.get("warnings", [])
+        both_ok = suggest_r["status"] == "success" and unused_r["status"] == "success"
+        return _format_result(
+            status="success" if both_ok else "error",
+            operation="analyze_indexes",
+            duration_ms=duration_ms,
+            result={
+                "mode": "all",
+                "suggestions": suggest_r.get("result"),
+                "unused": unused_r.get("result"),
+            },
+            message=f"Suggestions: {suggest_r.get('message', '')} | Unused: {unused_r.get('message', '')}",
+            warnings=combined_warnings
         )

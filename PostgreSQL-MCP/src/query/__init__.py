@@ -2,12 +2,10 @@
 
 from .query_optimizer import (
     explain_query,
-    suggest_indexes,
-    find_unused_indexes,
+    analyze_indexes,
 )
 
 __all__ = [
     "explain_query",
-    "suggest_indexes",
-    "find_unused_indexes",
+    "analyze_indexes",
 ]

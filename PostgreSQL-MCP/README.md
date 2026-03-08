@@ -6,18 +6,17 @@
 
 This is an MCP (Model Context Protocol) server that provides intelligent analysis, documentation, and complete CRUD operations for PostgreSQL databases. It combines deterministic schema extraction with AI-powered reasoning and secure data manipulation operations to help users and AI agents understand and interact with complex database structures.
 
-**Performance Optimized & Extended:** Started at 38 tools, optimized to 19 tools (~50% reduction), then strategically extended to 30 tools with high-value query optimization, data management, transactions, and monitoring capabilities.
+**Performance Optimized & Extended:** Started at 38 tools, optimized to 19 tools (~50% reduction), then strategically extended to 27 tools with high-value query optimization, data management, transactions, and monitoring capabilities.
 
 ###  Key Features
 
-- **Comprehensive Coverage**: 30 carefully designed tools covering all PostgreSQL operations
+- **Comprehensive Coverage**: 27 carefully designed tools covering all PostgreSQL operations
 - **Schema Extraction**: Automatically extract tables, columns, relationships, and constraints
 - **Intelligent Analysis**: Detect junction tables, implicit relationships, and suggest optimal joins
 - **AI-Powered Insights**: Leverage Ollama/LLM to generate business explanations and recommendations
 - **Complete CRUD Operations**: Unified tools for all data manipulation with SQL injection prevention
-- **Query Optimization**: Execution plan analysis, index suggestions, unused index detection
-- **Data Management**: Import/export (CSV/JSON/SQL), full-text search, duplicate detection
-- **Data Quality**: Foreign key validation, data search, duplicate finding
+- **Query Optimization**: Execution plan analysis, combined index analysis (suggest + unused detection)
+- **Data Management**: Import/export (CSV/JSON/SQL), full-text search
 - **Transaction Support**: Atomic multi-operation transactions with rollback
 - **Monitoring**: Database statistics, cache metrics, slow queries, connection tracking
 - **Multiple Output Formats**:
@@ -33,8 +32,8 @@ This is an MCP (Model Context Protocol) server that provides intelligent analysi
 ### Tool Evolution
 
 **Phase 1-2 (Core):** 19 tools - Foundation CRUD + Schema + Analysis  
-**Phase 3-6 (Extended):** +11 tools - Query optimization, data management, transactions, monitoring  
-**Result:** 30 highly strategic tools that cover real-world PostgreSQL operations
+**Phase 3-6 (Extended):** +8 tools - Query optimization, data management, transactions, monitoring  
+**Result:** 27 highly strategic tools that cover real-world PostgreSQL operations
 
 ---
 
@@ -82,7 +81,7 @@ PostgreSQL-MCP/
 │   └── monitoring/               # NEW - Phase 6A
 │       ├── __init__.py
 │       └── monitor.py            # Database statistics & monitoring
-├── postgresql_server.py          # MCP server with all 30 tools exposed
+├── postgresql_server.py          # MCP server with all 27 tools exposed
 ├── client.py                     # MCP client for testing
 ├── main.py                       # Entry point placeholder
 ├── pyproject.toml               # Python project configuration
@@ -158,16 +157,13 @@ Security and validation layer:
 #### `src/query/query_optimizer.py` (NEW - Phase 3A)
 Query performance analysis and optimization:
 - `explain_query()`: Get EXPLAIN/EXPLAIN ANALYZE output with execution plans
-- `suggest_indexes()`: Recommend indexes based on FK columns and table structure
-- `find_unused_indexes()`: Identify indexes with zero or low usage for cleanup
+- `analyze_indexes()`: Combined index analysis — suggest missing indexes or find unused ones (`mode="suggest"|"unused"|"all"`)
 
 #### `src/data/data_manager.py` (NEW - Phase 4A & 4B)
 Data import/export and quality tools:
 - `export_data()`: Export to CSV/JSON/SQL formats with filtering
 - `import_data()`: Import from CSV/JSON with column mapping and conflict resolution
 - `search_data()`: Full-text search with ILIKE, LIKE, or fuzzy matching
-- `find_duplicates()`: Detect duplicate records by columns
-- `validate_foreign_keys()`: Find orphaned records and FK violations
 
 #### `src/transaction/transaction_manager.py` (NEW - Phase 5A)
 Transaction management and safety:
@@ -223,7 +219,7 @@ uv run postgresql_server.py
 
 ---
 
-##  Available MCP Tools (19 Total - Optimized)
+##  Available MCP Tools (27 Total)
 
 ###  Category 1: Analysis & Schema Tools (5 tools)
 
@@ -370,6 +366,51 @@ Create single or composite indexes.
 - `action="list"`: List all views
 - `action="get"`: Get view SQL definition
 - `action="drop"`: Drop view with optional cascade
+
+---
+
+###  Category 7: Phase 3-6 Extended Tools (8 tools)
+
+#### 20. `query_explain(query, analyze, format)`
+Get EXPLAIN / EXPLAIN ANALYZE output for any SQL query.
+- `analyze=False`: Show estimated plan only
+- `analyze=True`: Run query and show actual row counts and timings
+- `format`: `"text"` (default) or `"json"`
+
+#### 21. `query_analyze_indexes(mode, table_name, min_size_mb)`
+Combined index analysis — suggest missing indexes or detect unused ones.
+- `mode="suggest"`: Recommend indexes for FK columns and large tables (optionally scoped to `table_name`)
+- `mode="unused"`: Find indexes with zero/low scan counts above `min_size_mb`
+- `mode="all"`: Run both analyses and return a combined report
+
+#### 22. `data_export(table_name, format, where_clause, where_params, columns, limit)`
+Export table data to CSV, JSON, or SQL INSERT format.
+- Supports column selection, WHERE filtering, and row limits
+- JSON output includes schema metadata
+
+#### 23. `data_import(table_name, data, format, column_mapping, conflict_action)`
+Import data from CSV or JSON into a table.
+- `conflict_action`: `"error"` | `"ignore"` | `"update"`
+- `column_mapping`: Rename incoming fields to match table columns
+
+#### 24. `data_search(table_name, search_term, columns, search_type, limit)`
+Full-text search across specified columns.
+- `search_type`: `"ilike"` (case-insensitive), `"like"` (case-sensitive), `"fuzzy"` (similarity)
+- Searches all text columns when `columns` is omitted
+
+#### 25. `transaction_execute(operations, rollback_on_error)`
+Run multiple SQL operations atomically in a single transaction.
+- Each operation: `{"sql": "...", "params": [...]}`
+- Auto-rollback on any failure when `rollback_on_error=True`
+
+#### 26. `transaction_backup_table(table_name, backup_name, include_indexes)`
+Create a quick snapshot backup of a table.
+- Copies data and optionally recreates indexes on the backup
+- Returns restore SQL to recover or diff against original
+
+#### 27. `monitoring_database_stats(stat_type)`
+Comprehensive database health and performance monitoring.
+- `stat_type`: `"summary"` | `"size"` | `"connections"` | `"cache_hit_ratio"` | `"slow_queries"` | `"locks"` | `"all"`
 
 ---
 
