@@ -6,33 +6,35 @@
 
 This is an MCP (Model Context Protocol) server that provides intelligent analysis, documentation, and complete CRUD operations for PostgreSQL databases. It combines deterministic schema extraction with AI-powered reasoning and secure data manipulation operations to help users and AI agents understand and interact with complex database structures.
 
-**Performance Optimized:** Reduced from 38 tools to 19 consolidated tools (~50% reduction) for significant token savings and faster agent decision-making while maintaining full functionality.
+**Performance Optimized & Extended:** Started at 38 tools, optimized to 19 tools (~50% reduction), then strategically extended to 30 tools with high-value query optimization, data management, transactions, and monitoring capabilities.
 
 ###  Key Features
 
-- **Token-Optimized**: 19 consolidated tools (down from 38) = ~50% lower context overhead
+- **Comprehensive Coverage**: 30 carefully designed tools covering all PostgreSQL operations
 - **Schema Extraction**: Automatically extract tables, columns, relationships, and constraints
 - **Intelligent Analysis**: Detect junction tables, implicit relationships, and suggest optimal joins
 - **AI-Powered Insights**: Leverage Ollama/LLM to generate business explanations and recommendations
 - **Complete CRUD Operations**: Unified tools for all data manipulation with SQL injection prevention
+- **Query Optimization**: Execution plan analysis, index suggestions, unused index detection
+- **Data Management**: Import/export (CSV/JSON/SQL), full-text search, duplicate detection
+- **Data Quality**: Foreign key validation, data search, duplicate finding
+- **Transaction Support**: Atomic multi-operation transactions with rollback
+- **Monitoring**: Database statistics, cache metrics, slow queries, connection tracking
 - **Multiple Output Formats**:
   - Mermaid ER diagrams (with SVG rendering)
   - Mermaid relationship flowcharts (with SVG rendering)
   - Comprehensive Markdown documentation
   - Visual diagram files (SVG, PNG, PDF)
 - **Query Assistance**: Smart join type recommendations (INNER vs LEFT)
-- **Modular Architecture**: Clean, extensible design for easy feature additions
+- **Modular Architecture**: Clean, extensible design organized by capability
 - **Diagram Rendering**: Auto-generate visual database structure diagrams
 - **Security**: Parameterized queries, input validation, SQL injection prevention
 
-### Optimization Benefits
+### Tool Evolution
 
-**Why Consolidation Matters:**
-- **Lower Token Usage**: Fewer tool descriptions in agent context = reduced costs per request
-- **Faster Responses**: Agents make decisions quicker with fewer options to evaluate
-- **Better UX**: Cleaner API with related operations logically grouped
-- **Easier Maintenance**: Less code duplication, single source of truth for operations
-- **Backward Compatible**: All original functionality preserved through unified interfaces
+**Phase 1-2 (Core):** 19 tools - Foundation CRUD + Schema + Analysis  
+**Phase 3-6 (Extended):** +11 tools - Query optimization, data management, transactions, monitoring  
+**Result:** 30 highly strategic tools that cover real-world PostgreSQL operations
 
 ---
 
@@ -60,15 +62,34 @@ PostgreSQL-MCP/
 │   ├── llm/
 │   │   ├── __init__.py
 │   │   └── ollama_client.py      # Ollama/LLM integration
-│   └── crud/
-│       ├── __init__.py           # CRUD operations export
-│       ├── crud_manager.py       # Core CRUD operations (20 operations)
-│       └── crud_validator.py     # Input validation & security
-├── postgresql_server.py          # MCP server with all tools exposed
+│   ├── crud/
+│   │   ├── __init__.py           # CRUD operations export
+│   │   ├── crud_manager.py       # Core CRUD operations (20 operations)
+│   │   └── crud_validator.py     # Input validation & security
+│   ├── schema_mod/
+│   │   ├── __init__.py           # Schema modification export
+│   │   ├── mod_manager.py        # Schema alteration operations
+│   │   └── mod_validator.py      # Schema modification validation
+│   ├── query/                    # NEW - Phase 3A
+│   │   ├── __init__.py
+│   │   └── query_optimizer.py    # Query analysis & optimization
+│   ├── data/                     # NEW - Phase 4A & 4B
+│   │   ├── __init__.py
+│   │   └── data_manager.py       # Import/export & data quality
+│   ├── transaction/              # NEW - Phase 5A
+│   │   ├── __init__.py
+│   │   └── transaction_manager.py # Transactions & backups
+│   └── monitoring/               # NEW - Phase 6A
+│       ├── __init__.py
+│       └── monitor.py            # Database statistics & monitoring
+├── postgresql_server.py          # MCP server with all 30 tools exposed
 ├── client.py                     # MCP client for testing
 ├── main.py                       # Entry point placeholder
 ├── pyproject.toml               # Python project configuration
 ├── .env                         # Environment variables (not in repo)
+├── PHASE3-6_RECOMMENDATIONS.md  # Design rationale for new tools
+├── PHASE3-6_IMPLEMENTATION_SUMMARY.md # Implementation details
+├── PHASE3-6_QUICK_REFERENCE.md  # Quick reference for new tools
 └── README.md                    # This file
 ```
 
@@ -133,6 +154,29 @@ Security and validation layer:
 - `explain_schema()`: Get business-level database analysis
 - `get_available_models()`: List deployed LLM models
 - `is_available()`: Check Ollama service status
+
+#### `src/query/query_optimizer.py` (NEW - Phase 3A)
+Query performance analysis and optimization:
+- `explain_query()`: Get EXPLAIN/EXPLAIN ANALYZE output with execution plans
+- `suggest_indexes()`: Recommend indexes based on FK columns and table structure
+- `find_unused_indexes()`: Identify indexes with zero or low usage for cleanup
+
+#### `src/data/data_manager.py` (NEW - Phase 4A & 4B)
+Data import/export and quality tools:
+- `export_data()`: Export to CSV/JSON/SQL formats with filtering
+- `import_data()`: Import from CSV/JSON with column mapping and conflict resolution
+- `search_data()`: Full-text search with ILIKE, LIKE, or fuzzy matching
+- `find_duplicates()`: Detect duplicate records by columns
+- `validate_foreign_keys()`: Find orphaned records and FK violations
+
+#### `src/transaction/transaction_manager.py` (NEW - Phase 5A)
+Transaction management and safety:
+- `execute_transaction()`: Atomic multi-operation transactions with rollback
+- `backup_table()`: Quick table backup with indexes and restore SQL
+
+#### `src/monitoring/monitor.py` (NEW - Phase 6A)
+Database monitoring and statistics:
+- `get_database_stats()`: Comprehensive monitoring (size, connections, cache, slow queries, locks)
 
 ---
 

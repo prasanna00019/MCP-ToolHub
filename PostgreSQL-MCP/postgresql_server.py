@@ -1,7 +1,8 @@
 """
-SchemaIntelligence MCP Server (Optimized Edition)
-AI-powered PostgreSQL database analysis and documentation
-Reduced from 38 tools to 18 tools for better performance and lower token usage
+SchemaIntelligence MCP Server (Extended Edition)
+AI-powered PostgreSQL database analysis and management
+Extended from 19 tools to 30 tools with comprehensive query optimization,
+data management, transactions, and monitoring capabilities.
 """
 
 from mcp.server.fastmcp import FastMCP
@@ -56,6 +57,33 @@ from src.schema_mod import (
     schema_list_views,
     schema_get_view_definition,
     schema_drop_view,
+)
+
+# Import Query Optimization operations (Phase 3A)
+from src.query import (
+    explain_query,
+    suggest_indexes,
+    find_unused_indexes,
+)
+
+# Import Data Management operations (Phase 4A & 4B)
+from src.data import (
+    export_data,
+    import_data,
+    search_data,
+    find_duplicates,
+    validate_foreign_keys,
+)
+
+# Import Transaction operations (Phase 5A)
+from src.transaction import (
+    execute_transaction,
+    backup_table,
+)
+
+# Import Monitoring operations (Phase 6A)
+from src.monitoring import (
+    get_database_stats,
 )
 
 # Initialize MCP Server
@@ -1018,6 +1046,355 @@ def mod_view(
             "status": "error",
             "error": str(e)
         }
+
+
+# ============================================
+# CATEGORY 5: QUERY OPTIMIZATION TOOLS (Phase 3A - 3 tools)
+# ============================================
+
+@mcp.tool()
+def query_explain(
+    query: str,
+    analyze: bool = False,
+    format: str = "text"
+) -> Dict[str, Any]:
+    """
+    Get query execution plan using EXPLAIN or EXPLAIN ANALYZE.
+    
+    Critical for understanding query performance, index usage, and optimization opportunities.
+    
+    Args:
+        query: SQL query to analyze
+        analyze: If True, actually execute the query and show real statistics (WARNING: executes the query)
+        format: Output format - 'text' (human-readable), 'json' (structured), or 'yaml'
+        
+    Examples:
+        - Basic plan: query="SELECT * FROM products WHERE price > 100"
+        - With analysis: query="SELECT * FROM orders", analyze=True
+        - JSON format: query="SELECT * FROM users", format="json"
+        
+    Returns:
+        Execution plan showing scan types, index usage, cost estimates, and timing
+    """
+    return explain_query(query, analyze, format)
+
+
+@mcp.tool()
+def query_suggest_indexes(
+    table_name: Optional[str] = None,
+    analyze_queries: bool = False
+) -> Dict[str, Any]:
+    """
+    Suggest potential indexes based on table structure and foreign keys.
+    
+    Analyzes:
+    - Foreign key columns without indexes
+    - Large tables without primary keys
+    - Commonly filtered columns (timestamps, status fields)
+    
+    Args:
+        table_name: Specific table to analyze (analyzes all tables if None)
+        analyze_queries: If True, also analyze query patterns (requires pg_stat_statements)
+        
+    Examples:
+        - Analyze all tables: (no arguments)
+        - Specific table: table_name="orders"
+        
+    Returns:
+        List of recommended indexes with SQL to create them
+    """
+    return suggest_indexes(table_name, analyze_queries)
+
+
+@mcp.tool()
+def query_find_unused_indexes(min_size_mb: float = 1.0) -> Dict[str, Any]:
+    """
+    Find indexes with zero or low usage that might be candidates for removal.
+    
+    Analyzes pg_stat_user_indexes to find:
+    - Indexes that have never been scanned
+    - Indexes with very low usage
+    - Potential space savings from removing unused indexes
+    
+    Args:
+        min_size_mb: Minimum index size in MB to report (default: 1.0)
+        
+    Examples:
+        - Find all unused: (no arguments)
+        - Only large unused: min_size_mb=5.0
+        
+    Returns:
+        List of unused/low-usage indexes with removal SQL and space savings
+    """
+    return find_unused_indexes(min_size_mb)
+
+
+# ============================================
+# CATEGORY 6: DATA MANAGEMENT TOOLS (Phase 4A & 4B - 5 tools)
+# ============================================
+
+@mcp.tool()
+def data_export(
+    table_name: str,
+    format: str = "json",
+    where_clause: Optional[str] = None,
+    output_path: Optional[str] = None,
+    limit: Optional[int] = None
+) -> Dict[str, Any]:
+    """
+    Export table data to CSV, JSON, or SQL format.
+    
+    Essential for:
+    - Data backups and migrations
+    - Sharing data with external tools
+    - Creating test datasets
+    
+    Args:
+        table_name: Name of the table to export
+        format: Export format - 'csv', 'json', or 'sql' (INSERT statements)
+        where_clause: Optional WHERE clause to filter data (without 'WHERE' keyword)
+        output_path: Optional file path to save output. If None, returns data as string
+        limit: Optional row limit for export
+        
+    Examples:
+        - Export to JSON: table_name="products", format="json"
+        - Filtered export: table_name="orders", where_clause="status = 'pending'"
+        - Save to file: table_name="users", output_path="users.csv", format="csv"
+        
+    Returns:
+        Exported data or file path with export statistics
+    """
+    return export_data(table_name, format, where_clause, output_path, limit)
+
+
+@mcp.tool()
+def data_import(
+    table_name: str,
+    format: str,
+    source: str,
+    mapping: Optional[Dict[str, str]] = None,
+    conflict_resolution: str = "error"
+) -> Dict[str, Any]:
+    """
+    Import data from CSV or JSON into a table.
+    
+    Essential for:
+    - Loading data from external sources
+    - Bulk data migrations
+    - Test data setup
+    
+    Args:
+        table_name: Target table name
+        format: Source format - 'csv' or 'json'
+        source: File path or JSON string (for JSON format)
+        mapping: Optional column mapping {source_col: target_col}
+        conflict_resolution: How to handle conflicts:
+            - "error": Stop on conflict (default)
+            - "skip": Skip conflicting rows
+            - "upsert": Update existing rows
+        
+    Examples:
+        - Import CSV: table_name="products", format="csv", source="products.csv"
+        - Import JSON: table_name="users", format="json", source='[{"name": "John"}]'
+        - With mapping: mapping={"user_name": "name", "user_email": "email"}
+        
+    Returns:
+        Import statistics with success/failure counts
+    """
+    return import_data(table_name, format, source, mapping, conflict_resolution)
+
+
+@mcp.tool()
+def data_search(
+    table_name: str,
+    search_columns: List[str],
+    search_term: str,
+    search_type: str = "ilike",
+    limit: int = 100
+) -> Dict[str, Any]:
+    """
+    Search for data using various search strategies.
+    
+    Supports:
+    - Case-insensitive search (ILIKE)
+    - Case-sensitive search (LIKE)
+    - Fuzzy/similarity search (requires pg_trgm extension)
+    
+    Args:
+        table_name: Table to search in
+        search_columns: List of columns to search
+        search_term: Term to search for
+        search_type: 'ilike' (case-insensitive), 'like' (case-sensitive), or 'similarity' (fuzzy)
+        limit: Maximum number of results (default: 100)
+        
+    Examples:
+        - Simple search: table_name="products", search_columns=["name", "description"], search_term="laptop"
+        - Fuzzy search: search_type="similarity", search_term="john"
+        
+    Returns:
+        Matching records with relevance scores (for similarity search)
+    """
+    return search_data(table_name, search_columns, search_term, search_type, limit)
+
+
+@mcp.tool()
+def data_find_duplicates(
+    table_name: str,
+    columns: List[str],
+    return_mode: str = "summary"
+) -> Dict[str, Any]:
+    """
+    Find duplicate records based on specified columns.
+    
+    Essential for:
+    - Data quality checks
+    - Pre-migration validation
+    - Preparing to add unique constraints
+    
+    Args:
+        table_name: Table to check for duplicates
+        columns: List of columns to check for duplicates
+        return_mode: 'summary' (counts only) or 'all_duplicates' (all duplicate rows)
+        
+    Examples:
+        - Check email duplicates: table_name="users", columns=["email"]
+        - Composite duplicates: table_name="products", columns=["sku", "vendor_id"]
+        - Get all rows: return_mode="all_duplicates"
+        
+    Returns:
+        Duplicate groups with counts and optionally all duplicate records
+    """
+    return find_duplicates(table_name, columns, return_mode)
+
+
+@mcp.tool()
+def data_validate_foreign_keys(table_name: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Validate foreign key integrity and find orphaned records.
+    
+    Critical for:
+    - Pre-migration data validation
+    - Finding data inconsistencies
+    - Preparing to add FK constraints
+    
+    Args:
+        table_name: Specific table to validate (validates all tables if None)
+        
+    Examples:
+        - Validate all: (no arguments)
+        - Specific table: table_name="orders"
+        
+    Returns:
+        List of foreign key violations with orphaned record counts and cleanup SQL
+    """
+    return validate_foreign_keys(table_name)
+
+
+# ============================================
+# CATEGORY 7: TRANSACTION TOOLS (Phase 5A - 2 tools)
+# ============================================
+
+@mcp.tool()
+def transaction_execute(
+    operations: List[Dict[str, Any]],
+    isolation_level: str = "READ COMMITTED"
+) -> Dict[str, Any]:
+    """
+    Execute multiple operations in a single ACID transaction.
+    
+    Ensures all operations succeed or all are rolled back together.
+    Critical for maintaining data consistency.
+    
+    Args:
+        operations: List of operations to execute. Each operation is a dict with:
+            - For queries: {"type": "query", "sql": "SELECT ..."}
+            - For inserts: {"type": "insert", "table": "users", "data": {"name": "John"}}
+            - For updates: {"type": "update", "table": "orders", "where": "id = 1", "values": {"status": "done"}}
+            - For deletes: {"type": "delete", "table": "temp", "where": "created < '2024-01-01'"}
+        isolation_level: Transaction isolation level:
+            - "READ UNCOMMITTED"
+            - "READ COMMITTED" (default)
+            - "REPEATABLE READ"
+            - "SERIALIZABLE"
+        
+    Examples:
+        - Multi-step order: operations=[
+            {"type": "insert", "table": "orders", "data": {"user_id": 1, "total": 100}},
+            {"type": "update", "table": "inventory", "where": "product_id = 5", "values": {"qty": "qty - 1"}},
+            {"type": "query", "sql": "SELECT balance FROM accounts WHERE user_id = 1"}
+          ]
+        
+    Returns:
+        Transaction results with all operation outcomes or rollback status
+    """
+    return execute_transaction(operations, isolation_level)
+
+
+@mcp.tool()
+def transaction_backup_table(
+    table_name: str,
+    backup_name: Optional[str] = None,
+    include_indexes: bool = True
+) -> Dict[str, Any]:
+    """
+    Create a backup copy of a table.
+    
+    Essential safety net before risky operations like:
+    - Schema changes
+    - Bulk updates/deletes
+    - Testing destructive operations
+    
+    Args:
+        table_name: Name of the table to backup
+        backup_name: Optional custom backup name. If None, generates "backup_<table>_<timestamp>"
+        include_indexes: Whether to copy indexes to the backup table (default: True)
+        
+    Examples:
+        - Quick backup: table_name="users"
+        - Named backup: table_name="products", backup_name="products_before_migration"
+        - No indexes: table_name="orders", include_indexes=False
+        
+    Returns:
+        Backup details with restore/cleanup SQL
+    """
+    return backup_table(table_name, backup_name, include_indexes)
+
+
+# ============================================
+# CATEGORY 8: MONITORING TOOLS (Phase 6A - 1 tool)
+# ============================================
+
+@mcp.tool()
+def monitoring_database_stats(stat_type: str = "summary") -> Dict[str, Any]:
+    """
+    Get database statistics and monitoring information.
+    
+    Essential for:
+    - Performance monitoring
+    - Health checks
+    - Capacity planning
+    - Troubleshooting
+    
+    Args:
+        stat_type: Type of statistics to retrieve:
+            - "summary": General database overview (size, connections, version)
+            - "size": Database and table sizes
+            - "connections": Active connection information
+            - "cache_hit_ratio": Cache performance metrics
+            - "slow_queries": Currently running slow queries
+            - "locks": Active locks and blocking queries
+            - "all": All statistics combined
+        
+    Examples:
+        - Quick overview: stat_type="summary"
+        - Check performance: stat_type="cache_hit_ratio"
+        - Find bottlenecks: stat_type="slow_queries"
+        - All metrics: stat_type="all"
+        
+    Returns:
+        Requested statistics with warnings for concerning metrics
+    """
+    return get_database_stats(stat_type)
 
 
 if __name__ == "__main__":
