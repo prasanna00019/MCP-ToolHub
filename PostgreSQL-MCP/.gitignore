@@ -14,13 +14,7 @@ WORK_TILL_NOW.md
 __pycache__
 *.pyc
 diagrams/
-READMES/
-EXTENSION_PLAN.md
-phase2_testing_prompts.md.resolved
-AGENT_TESTING_SUITE.md
-PHASE3-6_RECOMMENDATIONS.md
-PHASE3-6_QUICK_REFERENCE.md
-PHASE3-6_IMPLEMENTATION_SUMMARY.md
+*sql
 *csv
 *json
 CHANGELOG.md

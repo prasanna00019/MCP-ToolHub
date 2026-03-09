@@ -413,28 +413,14 @@ Comprehensive database health and performance monitoring.
 - `stat_type`: `"summary"` | `"size"` | `"connections"` | `"cache_hit_ratio"` | `"slow_queries"` | `"locks"` | `"all"`
 
 ---
-
-##  Tool Consolidation Summary
-
-| Category | Before | After | Reduction |
-|----------|--------|-------|-----------|
-| Analysis & Schema | 6 | 5 | -1 (17%) |
-| CRUD Create | 5 | 4 | -1 (20%) |
-| CRUD Read | 5 | 2 | -3 (60%) |
-| CRUD Update | 5 | 2 | -3 (60%) |
-| CRUD Delete | 4 | 1 | -3 (75%) |
-| Schema Modification | 13 | 5 | -8 (62%) |
-| **TOTAL** | **38** | **19** | **-19 (50%)** |
-
-**Result:** Exactly 50% reduction in tool count = ~50% lower token overhead for AI agents
-
+**Use OLLMCP client for locally testing with ollama providers**
 ---
 
 **Security Features (All Operations):**
-- ✅ Parameterized queries (prevents SQL injection)
-- ✅ Input validation (table/column name validation)
-- ✅ Constraint checking (validates data types and constraints)
-- ✅ Standardized response format with status and duration
+-  Parameterized queries (prevents SQL injection)
+-  Input validation (table/column name validation)
+-  Constraint checking (validates data types and constraints)
+-  Standardized response format with status and duration
 ---
 **CRUD & SCHEMA ANALYSIS VIDEO**
 [![Demo Video](https://img.shields.io/badge/WATCH-DEMO-red?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1neyl0bAqyX_0_sCIPTnmZFYL33Ykisva/view)
