@@ -1,0 +1,8 @@
+{
+  "default_sections": [
+    "overview",
+    "decisions",
+    "active_context",
+    "progress"
+  ]
+}

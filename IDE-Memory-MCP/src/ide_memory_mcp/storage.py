@@ -4,19 +4,15 @@ Core storage engine for IDE Memory MCP.
 Manages reading / writing project memory files to:
     ~/.ide-memory/projects/<project_id>/
 
-Changes from V1:
-- Fixed: asyncio import was missing (broke _detect_git_remote_async)
-- Fixed: init_project no longer creates the user's project directory
-- Added: per-section history (last 5 snapshots auto-saved on every write)
-- Added: per-section timestamps tracked in meta.json
-- Added: append_to_section — adds a dated entry without a full rewrite
-- Added: search_memory — keyword search across all sections with context lines
-- Added: get_section_history — retrieve previous snapshots of a section
-- Added: delete_project — clean removal of a project and all its memory
-- Added: get_all_section_names — returns default + any custom sections present
-- Changed: update_section / update_multiple_sections now allow custom section names
-- Changed: load_all_memory now includes custom sections
-- Changed: scan_directory_tree gains preserve_annotations support
+Filesystem layout per project:
+    <project_id>/
+        meta.json          — project metadata (name, path, timestamps)
+        overview.md        — project overview content
+        decisions.md       — architectural decisions
+        active_context.md  — current working context
+        progress.md        — development milestones
+        <custom>.md        — any custom sections the agent creates
+        .history/          — auto-saved snapshots before each overwrite
 """
 
 from __future__ import annotations
@@ -71,7 +67,7 @@ def _normalize_git_url(url: str) -> str:
       - .git suffix: repo.git → repo
       - Trailing slashes
     """
-    url = url.strip().rstrip("/")
+    url = url.strip().rstrip("/").lower()
     if url.endswith(".git"):
         url = url[:-4]
     if url.startswith("git@"):
@@ -80,7 +76,7 @@ def _normalize_git_url(url: str) -> str:
         if url.startswith(prefix):
             url = url[len(prefix):]
             break
-    return url.lower()
+    return url
 
 
 def is_valid_section_name(name: str) -> bool:
@@ -328,6 +324,13 @@ class MemoryStorage:
             return sp.read_text(encoding="utf-8")
         return ""
 
+    def get_section_size(self, project_id: str, section: str) -> int:
+        """Return the character count of a section without reading full content into memory."""
+        sp = self._section_path(project_id, section)
+        if sp.exists():
+            return sp.stat().st_size
+        return 0
+
     def update_section(self, project_id: str, section: str, content: str) -> None:
         """Overwrite a memory section with new content.
 
@@ -362,12 +365,6 @@ class MemoryStorage:
 
         Use this for decisions, progress notes, or any log-style additions.
         The agent doesn't need to read the existing content first.
-
-        Args:
-            project_id: Project to update.
-            section: Section name (default or custom).
-            content: The new content to append.
-            heading: Optional heading for the entry (e.g. "Decision: Auth Strategy").
         """
         existing = self.get_section(project_id, section)
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -386,6 +383,17 @@ class MemoryStorage:
         """Load all memory sections (default + custom) for a project."""
         result: dict[str, str] = {}
         for section in self.get_all_section_names(project_id):
+            content = self.get_section(project_id, section)
+            if content.strip():
+                result[section] = content
+        return result
+
+    def load_sections(self, project_id: str, sections: list[str]) -> dict[str, str]:
+        """Load only the requested sections. Skips invalid or missing ones."""
+        result: dict[str, str] = {}
+        for section in sections:
+            if not is_valid_section_name(section):
+                continue
             content = self.get_section(project_id, section)
             if content.strip():
                 result[section] = content
@@ -456,190 +464,3 @@ class MemoryStorage:
                 results[section] = snippets
 
         return results
-
-
-# ---------------------------------------------------------------------------
-# Directory tree scanner
-# ---------------------------------------------------------------------------
-
-IGNORE_DIRS = {
-    ".git", ".svn", ".hg",
-    "node_modules", ".node_modules",
-    "__pycache__", ".pytest_cache", ".mypy_cache",
-    ".venv", "venv", "env", ".env",
-    ".tox", ".nox",
-    "dist", "build", ".eggs",
-    ".next", ".nuxt", ".output",
-    ".idea", ".vscode", ".vs",
-    "vendor", "target",
-    ".terraform",
-    ".history",  # our own history folder
-}
-
-IGNORE_EXTENSIONS = {
-    ".pyc", ".pyo", ".class", ".o", ".so", ".dll", ".exe",
-    ".lock", ".sum",
-    ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp",
-    ".woff", ".woff2", ".ttf", ".eot",
-    ".mp3", ".mp4", ".avi", ".mov",
-    ".zip", ".tar", ".gz", ".rar",
-    ".db", ".sqlite", ".sqlite3",
-}
-
-
-def _should_ignore(name: str, is_dir: bool) -> bool:
-    if is_dir:
-        return name in IGNORE_DIRS or name.startswith(".")
-    if name.startswith("."):
-        return True
-    suffix = Path(name).suffix.lower()
-    return suffix in IGNORE_EXTENSIONS
-
-
-def _extract_annotations(structure_content: str) -> dict[str, str]:
-    """Parse an existing structure section and extract per-filename annotations.
-
-    Looks for lines like:
-        ├── server.py (12KB)  <!-- main entry point -->
-        └── auth.py (4KB)  <!-- handles JWT + OAuth -->
-
-    Returns {filename: annotation_text}.
-    """
-    annotations: dict[str, str] = {}
-    annotation_re = re.compile(r"<!--\s*(.+?)\s*-->")
-
-    for line in structure_content.splitlines():
-        if "<!--" in line and "-->" in line:
-            # Extract the filename (last path component before size info)
-            name_match = re.search(r"[\w\-.]+\.\w+", line)
-            ann_match = annotation_re.search(line)
-            if name_match and ann_match:
-                annotations[name_match.group()] = ann_match.group(1)
-
-    return annotations
-
-
-def _extract_user_notes(structure_content: str) -> str:
-    """Extract any free-text notes added after the auto-generated tree block."""
-    # The tree ends with ``` followed by the "Total entries" line.
-    # User notes would be anything meaningful after that.
-    in_code_block = False
-    past_tree = False
-    note_lines: list[str] = []
-
-    for line in structure_content.splitlines():
-        if line.strip().startswith("```"):
-            in_code_block = not in_code_block
-            if not in_code_block:
-                past_tree = True
-            continue
-
-        if past_tree and not line.startswith("**Total entries"):
-            note_lines.append(line)
-
-    notes = "\n".join(note_lines).strip()
-    return notes if notes else ""
-
-
-def scan_directory_tree(
-    project_path: str,
-    max_depth: int = 4,
-    max_files: int = 200,
-    existing_structure: str = "",
-    preserve_annotations: bool = True,
-) -> str:
-    """Scan a project directory and return a markdown tree representation.
-
-    Args:
-        project_path: Root directory to scan.
-        max_depth: Maximum depth to recurse.
-        max_files: Maximum number of entries to include.
-        existing_structure: Current content of the structure section (for annotation preservation).
-        preserve_annotations: If True, carry forward inline `<!-- -->` annotations and
-                              any free-text notes the agent added after the tree block.
-
-    Returns:
-        Markdown-formatted directory tree string.
-    """
-    root = Path(project_path)
-    if not root.exists() or not root.is_dir():
-        return f"❌ Path does not exist or is not a directory: {project_path}"
-
-    # Collect existing annotations before overwriting
-    annotations: dict[str, str] = {}
-    user_notes: str = ""
-    if preserve_annotations and existing_structure:
-        annotations = _extract_annotations(existing_structure)
-        user_notes = _extract_user_notes(existing_structure)
-
-    scan_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    lines: list[str] = [
-        f"# Project Structure: {root.name}",
-        f"_Last scanned: {scan_ts}_\n",
-        "```",
-    ]
-    file_count = 0
-
-    def _walk(directory: Path, prefix: str, depth: int) -> None:
-        nonlocal file_count
-        if depth > max_depth or file_count > max_files:
-            return
-
-        try:
-            entries = sorted(
-                directory.iterdir(),
-                key=lambda e: (not e.is_dir(), e.name.lower()),
-            )
-        except PermissionError:
-            return
-
-        entries = [e for e in entries if not _should_ignore(e.name, e.is_dir())]
-
-        for i, entry in enumerate(entries):
-            if file_count > max_files:
-                lines.append(f"{prefix}... (truncated, >{max_files} entries)")
-                return
-
-            is_last = i == len(entries) - 1
-            connector = "└── " if is_last else "├── "
-            extension = "    " if is_last else "│   "
-
-            if entry.is_dir():
-                lines.append(f"{prefix}{connector}{entry.name}/")
-                file_count += 1
-                _walk(entry, prefix + extension, depth + 1)
-            else:
-                try:
-                    size = entry.stat().st_size
-                    if size < 1024:
-                        size_str = f"{size}B"
-                    elif size < 1024 * 1024:
-                        size_str = f"{size // 1024}KB"
-                    else:
-                        size_str = f"{size // (1024 * 1024)}MB"
-                    base = f"{prefix}{connector}{entry.name} ({size_str})"
-                except OSError:
-                    base = f"{prefix}{connector}{entry.name}"
-
-                # Re-attach any existing annotation for this filename
-                ann = annotations.get(entry.name, "")
-                if ann:
-                    base += f"  <!-- {ann} -->"
-
-                lines.append(base)
-                file_count += 1
-
-    _walk(root, "", 0)
-    lines.append("```")
-
-    truncation_note = ""
-    if file_count > max_files:
-        truncation_note = f"\n> ⚠️ Tree truncated at {max_files} entries."
-
-    lines.append(f"\n**Total entries shown**: {min(file_count, max_files)}{truncation_note}")
-
-    # Re-attach user notes that were added after the tree
-    if user_notes:
-        lines.append(f"\n---\n**Notes**\n\n{user_notes}")
-
-    return "\n".join(lines)

@@ -10,10 +10,9 @@ from pydantic import BaseModel, Field
 
 
 # Default sections created for every new project.
-# Custom sections beyond these are fully supported — just pass any valid name to update_memory.
+# Custom sections beyond these are fully supported — just pass any valid name.
 MEMORY_SECTIONS = [
     "overview",
-    "structure",
     "decisions",
     "active_context",
     "progress",
