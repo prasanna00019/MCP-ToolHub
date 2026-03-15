@@ -1,6 +1,6 @@
 [project]
 name = "ide-memory-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "Cross-IDE persistent memory layer for AI coding agents via MCP"
 readme = "README.md"
 requires-python = ">=3.11"

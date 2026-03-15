@@ -364,7 +364,7 @@ uv build
 ### Install from built package
 
 ```bash
-pip install dist/ide_memory_mcp-0.2.0-py3-none-any.whl
+pip install dist/ide_memory_mcp-0.2.1-py3-none-any.whl
 ```
 
 ---
