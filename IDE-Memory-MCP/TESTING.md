@@ -19,13 +19,39 @@ Run with coverage:
 uv run pytest tests/ -v --cov=ide_memory_mcp --cov-report=term-missing
 ```
 
-### What the tests cover (35 tests)
+### What the tests cover (43 tests)
 
 | Test file | Tests | Coverage |
 |-----------|-------|----------|
 | `test_storage.py` | 15 | Path normalization, git URL normalization, section name validation, project CRUD, section read/write, selective loading, search, history, custom sections, delete, list |
 | `test_server.py` — Tools | 18 | All 4 MCP tools end-to-end: `init_project` (new + reconnect + bootstrap mention + empty warning), `read_memory` (summary, selective, maxChars, search, stale detection, prune instructions), `write_memory` (overwrite + append + empty reminder), `manage_projects` (list + delete) |
 | `test_server.py` — Prompts | 3 | All 3 MCP prompts return correct content: `start_session`, `bootstrap_memory`, `update_memory` |
+| `test_cli.py` | 7 | CLI logic: config merge (create, merge, skip, nested, bad JSON), `doctor` run, `status` command |
+
+---
+
+## 1.1 CLI Commands Testing (Manual)
+
+You can verify the CLI commands locally before publishing.
+
+### Test `setup` (Auto-configure)
+```bash
+uv run ide-memory-mcp setup --cursor
+```
+✅ Verify `~/.cursor/mcp.json` now contains `ide-memory`.
+
+### Test `doctor` (Health Check)
+```bash
+uv run ide-memory-mcp doctor
+```
+✅ Verify it lists your storage location, projects count, and IDE configurations.
+
+### Test `status` (Project Overview)
+```bash
+uv run ide-memory-mcp status
+```
+✅ Verify it lists your registered projects with section counts and sizes.
+
 
 ---
 

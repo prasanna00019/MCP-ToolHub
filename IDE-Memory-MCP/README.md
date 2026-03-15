@@ -51,7 +51,7 @@ Cursor ←──→ IDE Memory MCP ←──→ VS Code
 
 ## Quick Start
 
-### Install
+### 1. Install
 
 ```bash
 # Using uv (recommended)
@@ -61,21 +61,58 @@ uv pip install ide-memory-mcp
 pip install ide-memory-mcp
 ```
 
-### From Source (Development)
+### 2. Auto-Configure Your IDE
+
+Run the setup command to automatically detect and configure installed IDEs (Cursor, VS Code, Windsurf, Claude Desktop):
 
 ```bash
-git clone https://github.com/prasanna-pmpeople/IDE-Memory-MCP.git
-cd IDE-Memory-MCP
-uv sync
+ide-memory-mcp setup
 ```
 
-### Configure Your IDE
+💡 *Restart your IDE after running this command to activate the MCP server.*
 
-Add the MCP server to your IDE's configuration:
+---
+
+## CLI Commands
+
+The `ide-memory-mcp` package includes practical commands to manage your setup:
+
+### `ide-memory-mcp setup`
+Auto-configure MCP for your IDEs.
+
+```bash
+ide-memory-mcp setup              # auto-detect + configure all
+ide-memory-mcp setup --cursor     # configure only Cursor
+ide-memory-mcp setup --vscode     # configure only VS Code
+ide-memory-mcp setup --windsurf   # configure only Windsurf
+ide-memory-mcp setup --claude     # configure only Claude Desktop
+ide-memory-mcp setup --all        # configure all supported
+```
+
+### `ide-memory-mcp doctor`
+Health check your installation.
+
+```bash
+ide-memory-mcp doctor
+```
+Verifies server import, storage disk usage, projects count, and which IDEs are configured.
+
+### `ide-memory-mcp status`
+Quick overview of all projects.
+
+```bash
+ide-memory-mcp status
+```
+Lists registered projects with section counts, total size, and last updated date.
+
+---
 
 <details>
-<summary><b>Cursor</b> — <code>.cursor/mcp.json</code></summary>
+<summary>💡 <b>Manual IDE Configuration</b> (If setup fails or for advanced users)</summary>
 
+Add the MCP server to your IDE's configuration file:
+
+#### **Cursor** — `~/.cursor/mcp.json`
 ```json
 {
   "mcpServers": {
@@ -86,23 +123,7 @@ Add the MCP server to your IDE's configuration:
 }
 ```
 
-If installed from source:
-```json
-{
-  "mcpServers": {
-    "ide-memory": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/IDE-Memory-MCP", "run", "ide-memory-mcp"]
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>VS Code</b> — <code>.vscode/mcp.json</code></summary>
-
+#### **VS Code** — `.vscode/mcp.json` (or global settings)
 ```json
 {
   "mcpServers": {
@@ -113,11 +134,7 @@ If installed from source:
 }
 ```
 
-</details>
-
-<details>
-<summary><b>Windsurf</b> — <code>~/.codeium/windsurf/mcp_config.json</code></summary>
-
+#### **Windsurf** — `~/.codeium/windsurf/mcp_config.json`
 ```json
 {
   "mcpServers": {
@@ -128,28 +145,21 @@ If installed from source:
 }
 ```
 
-</details>
-
-<details>
-<summary><b>Claude Desktop</b> — <code>claude_desktop_config.json</code></summary>
-
-```json
-{
-  "mcpServers": {
-    "ide-memory": {
-      "command": "ide-memory-mcp"
-    }
-  }
-}
-```
-
-Config location:
+#### **Claude Desktop**
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-</details>
+```json
+{
+  "mcpServers": {
+    "ide-memory": {
+      "command": "ide-memory-mcp"
+    }
+  }
+}
+```
 
-Restart your IDE after adding the configuration.
+</details>
 
 ---
 
@@ -364,7 +374,7 @@ uv build
 ### Install from built package
 
 ```bash
-pip install dist/ide_memory_mcp-0.2.1-py3-none-any.whl
+pip install dist/ide_memory_mcp-1.0.0-py3-none-any.whl
 ```
 
 ---

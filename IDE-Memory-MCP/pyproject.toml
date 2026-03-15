@@ -1,6 +1,6 @@
 [project]
 name = "ide-memory-mcp"
-version = "0.2.1"
+version = "1.0.0"
 description = "Cross-IDE persistent memory layer for AI coding agents via MCP"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -38,7 +38,7 @@ Repository = "https://github.com/prasanna-pmpeople/IDE-Memory-MCP"
 Issues = "https://github.com/prasanna-pmpeople/IDE-Memory-MCP/issues"
 
 [project.scripts]
-ide-memory-mcp = "ide_memory_mcp.server:main"
+ide-memory-mcp = "ide_memory_mcp.cli:main"
 
 [build-system]
 requires = ["hatchling"]
