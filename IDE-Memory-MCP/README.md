@@ -1,7 +1,7 @@
 # IDE Memory MCP
 
 <p align="center">
-  <img src="logo.png" alt="IDE Memory MCP" width="200"/>
+  <img src="https://github.com/prasanna00019/MCP-ToolHub/raw/main/IDE-Memory-MCP/logo.png" alt="IDE Memory MCP" width="350"/>
 </p>
 
 > **Cross-IDE persistent memory for AI coding agents** — your AI remembers every project, across every IDE.
@@ -371,35 +371,6 @@ pip install dist/ide_memory_mcp-0.2.0-py3-none-any.whl
 
 ## How It Works
 
-```mermaid
-sequenceDiagram
-    participant Agent as AI Agent (any IDE)
-    participant MCP as IDE Memory MCP
-    participant FS as ~/.ide-memory/
-
-    Note over Agent,FS: Session Start
-    Agent->>MCP: init_project(path)
-    MCP->>FS: Check for existing project
-    FS-->>MCP: Found (reconnect)
-    MCP-->>Agent: Summary table + smart warnings
-
-    Agent->>MCP: read_memory(id, sections=["overview"])
-    MCP->>FS: Read only overview.md
-    MCP-->>Agent: Overview content
-
-    Note over Agent,FS: During Session
-    Agent->>MCP: write_memory(id, {decisions: "..."}, append=True)
-    MCP->>FS: Save to history → append decisions.md
-    MCP-->>Agent: ✅ Appended
-
-    Note over Agent,FS: Session End
-    Agent->>MCP: write_memory(id, {active_context: "...", progress: "..."})
-    MCP->>FS: Save to history → update sections
-    MCP-->>Agent: ✅ Updated — memory persists for next session
-```
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE) for details.
+<p align="center">
+  <img src="https://github.com/prasanna00019/MCP-ToolHub/raw/main/IDE-Memory-MCP/mermaid.png" alt="IDE Memory MCP" width="400"/>
+</p>
