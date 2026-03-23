@@ -13,7 +13,6 @@ WORK_TILL_NOW.md
 *env
 __pycache__
 *.pyc
-diagrams/
 *sql
 *csv
 *json

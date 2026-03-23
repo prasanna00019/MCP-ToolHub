@@ -20,8 +20,9 @@ This is an MCP (Model Context Protocol) server that provides intelligent analysi
 - **Transaction Support**: Atomic multi-operation transactions with rollback
 - **Monitoring**: Database statistics, cache metrics, slow queries, connection tracking
 - **Multiple Output Formats**:
-  - Mermaid ER diagrams (with SVG rendering)
-  - Mermaid relationship flowcharts (with SVG rendering)
+  - PlantUML ER diagrams (with SVG rendering)
+  - PlantUML Class diagrams (with SVG rendering)
+  - PlantUML Component diagrams (with SVG rendering)
   - Comprehensive Markdown documentation
   - Visual diagram files (SVG, PNG, PDF)
 - **Query Assistance**: Smart join type recommendations (INNER vs LEFT)
@@ -55,7 +56,7 @@ PostgreSQL-MCP/
 │   │   └── detector.py           # Junction table & relationship detection
 │   ├── generation/
 │   │   ├── __init__.py
-│   │   ├── mermaid_gen.py        # ER diagram generation
+│   │   ├── plantuml_gen.py       # Diagram generation (ERD, Class, Component)
 │   │   ├── markdown_gen.py       # Documentation generation
 │   │   └── diagram_renderer.py   # SVG diagram rendering
 │   ├── llm/
@@ -86,9 +87,6 @@ PostgreSQL-MCP/
 ├── main.py                       # Entry point placeholder
 ├── pyproject.toml               # Python project configuration
 ├── .env                         # Environment variables (not in repo)
-├── PHASE3-6_RECOMMENDATIONS.md  # Design rationale for new tools
-├── PHASE3-6_IMPLEMENTATION_SUMMARY.md # Implementation details
-├── PHASE3-6_QUICK_REFERENCE.md  # Quick reference for new tools
 └── README.md                    # This file
 ```
 
@@ -133,15 +131,15 @@ Security and validation layer:
 - `validate_primary_key()`: Primary key constraint validation
 - `validate_foreign_key()`: Foreign key relationship validation
 
-#### `src/generation/mermaid_gen.py`
-- `generate_mermaid_erd()`: Entity-Relationship Diagram in Mermaid syntax
-- `generate_mermaid_flowchart()`: Relationship flowchart visualization
-- Supports table relationships, constraints, and cardinality
+#### `src/generation/plantuml_gen.py`
+- `generate_plantuml_erd()`: Entity-Relationship Diagram in PlantUML syntax
+- `generate_plantuml_class()`: Class diagram visualization
+- `generate_plantuml_component()`: Architecture component diagram
 
 #### `src/generation/diagram_renderer.py`
-- `render_database_diagrams()`: Convert Mermaid diagrams to visual formats
-- SVG rendering (recommended for API usage)
-- PNG/PDF support (requires mermaid-cli)
+- `render_database_diagrams()`: Convert PlantUML diagrams to visual formats
+- SVG rendering via PlantUML Web API (recommended for API usage)
+- PNG/PDF support built-in
 
 #### `src/generation/markdown_gen.py`
 - `generate_markdown()`: Full database documentation in Markdown
@@ -229,15 +227,16 @@ Comprehensive schema analysis without LLM.
 - Junction tables detected
 - Implicit relationships discovered
 - Join suggestions (INNER vs LEFT)
-- Mermaid ER diagram
-- Mermaid relationship flowchart
+- PlantUML ER diagram
+- PlantUML Class diagram
+- PlantUML Component diagram
 - Comprehensive Markdown documentation
 
 #### 2. `explain_database()`
 AI-powered database analysis using Ollama LLM.
 - Business explanation of database purpose
 - Detected relationships and join recommendations
-- Improved Mermaid ERD with AI insights
+- Improved PlantUML ERD with AI insights
 - Database quality recommendations
 
 #### 3. `get_table_details(table_name: str)`
@@ -255,7 +254,8 @@ Detailed analysis of a specific table.
 #### 5. `render_database_diagrams(output_format: str = "svg")`
 Generate visual database structure diagrams.
 - ER Diagram (erd_svg.svg)
-- Flowchart (flowchart_svg.svg)
+- Class Diagram (class_svg.svg)
+- Component Diagram (component_svg.svg)
 - SVG/PNG/PDF files in `diagrams/` directory
 
 ---
@@ -425,12 +425,45 @@ Comprehensive database health and performance monitoring.
 **CRUD & SCHEMA ANALYSIS VIDEO**
 [![Demo Video](https://img.shields.io/badge/WATCH-DEMO-red?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1neyl0bAqyX_0_sCIPTnmZFYL33Ykisva/view)
 
+**Refer to [AGENT_TESTING_SUITE.md](AGENT_TESTING_SUITE.md) for complete testing flow**
+
+## Here are images of the some tool in action:
+
+## Overview of Database
+![Overview](images/overview.PNG)
+
+## Backup Table
+![Backup Table](images/backup_table.PNG)
+
+## Export data to CSV/JSON/SQL
+![Export](images/export.PNG)
+
+## Foreign Key Tool
+![Foreign Key Tool](images/fk_tool.PNG)
+
+## Suggest New Indexes
+![New Indexes](images/new_indexes.PNG)
+
+## Database Monitoring
+![Monitoring](images/monitoring.PNG)
+
+## Create New Index
+![New Index](images/index.PNG)
+
+## CRUD Operations
+
+![Insert Operation](images/crud_insert.PNG)
+
+![Create Table](images/create_table.PNG)
+
+## Refer to [diagrams/](./diagrams) folder to view Generated ERD Diagrams
+
 ---
 
 
 
 ## 🤝 Contributing
 
-This project is OpenSource. Contributions are welcome
+This project is OpenSource. Contributions are welcome.
 
 ---

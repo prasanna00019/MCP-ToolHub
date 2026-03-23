@@ -48,14 +48,14 @@ Tasks:
 2. Identify relationships (explicit or implicit).
 3. Detect possible foreign keys based on column naming like *_id.
 4. Suggest join types (INNER vs LEFT).
-5. Generate an improved Mermaid ER diagram.
+5. Generate an improved PlantUML ER diagram.
 6. Provide insights about structure quality.
 
 Return response in structured JSON with keys:
 - business_explanation (string)
 - detected_relationships (list of dicts)
 - join_recommendations (list of dicts)
-- mermaid_erd (string)
+- plantuml_erd (string)
 - insights (list of strings)
 
 Schema:

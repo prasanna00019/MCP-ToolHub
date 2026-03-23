@@ -13,8 +13,7 @@ import json
 from src.schema import extract_schema
 from src.analysis import detect_junction_tables, suggest_joins
 from src.analysis.detector import detect_implicit_relationships
-from src.generation import generate_mermaid_erd, generate_markdown
-from src.generation.mermaid_gen import generate_mermaid_flowchart
+from src.generation import generate_plantuml_erd, generate_plantuml_class, generate_plantuml_component, generate_markdown
 from src.generation import DiagramRenderer
 from src.generation.diagram_renderer import render_database_diagrams as render_diagrams_impl
 from src.llm import OllamaAnalyzer
@@ -99,8 +98,10 @@ def analyze_database() -> Dict[str, Any]:
     - Schema structure (tables, columns, keys, data types)
     - Junction/association tables detection
     - Join recommendations (INNER vs LEFT)
-    - ER diagrams in Mermaid format
-    - Relationship flowcharts
+    - ER diagrams in PlantUML format
+    - ER diagrams in PlantUML format
+    - Class diagrams in PlantUML format
+    - Component diagrams in PlantUML format
     - Comprehensive Markdown documentation
     """
     try:
@@ -112,8 +113,9 @@ def analyze_database() -> Dict[str, Any]:
             "junction_tables": detect_junction_tables(schema),
             "implicit_relationships": detect_implicit_relationships(schema),
             "suggested_joins": suggest_joins(schema),
-            "mermaid_erd": generate_mermaid_erd(schema),
-            "mermaid_flowchart": generate_mermaid_flowchart(schema),
+            "plantuml_erd": generate_plantuml_erd(schema),
+            "plantuml_class": generate_plantuml_class(schema),
+            "plantuml_component": generate_plantuml_component(schema),
             "markdown_documentation": generate_markdown(schema)
         }
     except Exception as e:
@@ -132,7 +134,7 @@ def explain_database() -> Dict[str, Any]:
     - Business purpose of the database
     - Detected relationships (explicit & implicit)
     - Join type recommendations
-    - Improved Mermaid ER diagram
+    - Improved PlantUML ER diagram
     - Database quality insights
     """
     try:
@@ -263,11 +265,12 @@ def render_database_diagrams(output_format: str = "svg") -> Dict[str, Any]:
     Render database diagrams as visual images (SVG/PNG/PDF).
     
     Generates visual representations of your database structure:
-    - Entity-Relationship (ER) Diagram: Shows all tables, columns, and relationships
-    - Flowchart: Shows table relationships and data flow
+    - Entity-Relationship (ER) Diagram
+    - Class Diagram
+    - Component Diagram
     
     Args:
-        output_format: Output format (svg recommended; png/pdf require mermaid-cli)
+        output_format: Output format (svg recommended; png/pdf also supported via PlantUML)
         
     Returns:
         Paths to generated diagram files in the 'diagrams/' directory
@@ -283,9 +286,8 @@ def render_database_diagrams(output_format: str = "svg") -> Dict[str, Any]:
         if not diagrams:
             return {
                 "status": "warning",
-                "message": "Diagrams could not be rendered. Check if mermaid-cli is installed.",
-                "installation_hint": "Install mermaid-cli: npm install -g @mermaid-js/mermaid-cli",
-                "fallback": "Use analyze_database() for Mermaid syntax instead"
+                "message": "Diagrams could not be rendered via PlantUML API.",
+                "fallback": "Use analyze_database() for PlantUML syntax instead"
             }
         
         return {

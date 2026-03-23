@@ -1,13 +1,15 @@
 """Generation module for SchemaIntelligence"""
 
-from .mermaid_gen import generate_mermaid_erd, generate_mermaid_flowchart
-from .markdown_gen import generate_markdown
-from .diagram_renderer import DiagramRenderer, render_database_diagrams
+from .diagram_renderer import render_database_diagrams, DiagramRenderer
+from .markdown_gen import generate_markdown, generate_table_documentation
+from .plantuml_gen import generate_plantuml_erd, generate_plantuml_class, generate_plantuml_component
 
 __all__ = [
-    "generate_mermaid_erd",
-    "generate_mermaid_flowchart", 
-    "generate_markdown",
-    "DiagramRenderer",
-    "render_database_diagrams"
+    'render_database_diagrams',
+    'DiagramRenderer',
+    'generate_markdown',
+    'generate_table_documentation',
+    'generate_plantuml_erd',
+    'generate_plantuml_class',
+    'generate_plantuml_component',
 ]
